@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="digital affidavit in KDFT" name="description" />
+    <meta content="Frenz" name="author" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" th:href="@{/images/favicon.ico}">
+
+    <!-- Bootstrap Css -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" id="bootstrap-style" />
+    <!-- Icons Css -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/icons.min.css}" />
+    <!-- App Css-->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/app.min.css}" id="app-style" />
+</head>
+
+<body data-sidebar="dark">
+
+    <th:block layout:fragment="loginContent"></th:block>
+
+<!-- JAVASCRIPT -->
+<script th:src="@{/libs/jquery/jquery.min.js}"></script>
+<script th:src="@{/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/libs/metismenu/metisMenu.min.js}"></script>
+<script th:src="@{/libs/simplebar/simplebar.min.js}"></script>
+<script th:src="@{/libs/node-waves/waves.min.js}"></script>
+<script th:src="@{/js/common.utils.js}"></script>
+
+<th:block layout:fragment="endBlock"></th:block>
+
+</body>
+</html>

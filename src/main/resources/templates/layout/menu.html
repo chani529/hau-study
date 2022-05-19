@@ -1,0 +1,135 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="menuPart" class="vertical-menu">
+
+    <div data-simplebar class="h-100">
+
+        <!--- Sidemenu -->
+        <div id="sidebar-menu">
+            <!-- Left Menu Start -->
+            <ul class="metismenu list-unstyled" id="side-menu">
+                <li class="menu-title">Main</li>
+
+                <li>
+                    <a href="/admin" class="waves-effect">
+                        <i class="mdi mdi-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="menu-title">사용자/환자</li>
+                <li>
+                    <a href="/admin/user" class=" waves-effect">
+                        <i class="mdi mdi-account"></i>
+                        <span>사용자</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/userCard" class=" waves-effect">
+                        <i class="mdi mdi-credit-card"></i>
+                        <span>결제카드</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/userAddress" class=" waves-effect">
+                        <i class="mdi mdi-map-marker"></i>
+                        <span>주소</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/ward" class=" waves-effect">
+                        <i class="mdi mdi-face-agent"></i>
+                        <span>대리인</span>
+                    </a>
+                </li>
+
+                <li class="menu-title">병원</li>
+                <li>
+                    <a href="/admin/hospital" class=" waves-effect">
+                        <i class="mdi mdi-hospital"></i>
+                        <span>병원</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/hospitalTag" class=" waves-effect">
+                        <i class="mdi mdi-label"></i>
+                        <span>병원 태그</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/doctor" class=" waves-effect">
+                        <i class="mdi mdi-doctor"></i>
+                        <span>의사</span>
+                    </a>
+                </li>
+            </li>
+            <li>
+                <a href="/admin/doctorTag" class=" waves-effect">
+                    <i class="mdi mdi-label"></i>
+                    <span>의사 태그</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/pharmacist" class=" waves-effect">
+                    <i class="mdi mdi-pharmacy"></i>
+                    <span>약사</span>
+                </a>
+            </li>
+
+                <li class="menu-title">진료</li>
+                <li>
+                    <a href="/admin/reservation" class=" waves-effect">
+                        <i class="mdi mdi-phone"></i>
+                        <span>예약</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/treat" class=" waves-effect">
+                        <i class="mdi mdi-stethoscope"></i>
+                        <span>진료</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/review" class=" waves-effect">
+                        <i class="mdi mdi-message"></i>
+                        <span>리뷰</span>
+                    </a>
+                </li>
+
+                <li class="menu-title">시스템</li>
+                <li>
+                    <a href="/admin/code" class=" waves-effect">
+                        <i class="mdi mdi-chart-arc"></i>
+                        <span>코드</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/file" class=" waves-effect">
+                        <i class="mdi mdi-file"></i>
+                        <span>파일</span>
+                    </a>
+                </li>
+
+
+
+
+                <li class="menu-title">설문</li>
+                <li>
+                    <a href="/admin/question" class=" waves-effect">
+                        <i class="mdi mdi-file-document"></i>
+                        <span>문항</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/survey" class=" waves-effect">
+                        <i class="mdi mdi-file-document-edit-outline"></i>
+                        <span>설문</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <!-- Sidebar -->
+    </div>
+</div>
+
+</html>

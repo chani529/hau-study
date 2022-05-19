@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]  </title>
+
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/chartist/chartist.min.css}" />
+
+</th:block>
+
+<th:block layout:fragment="mainContent">
+	<div>
+		<canvas id="jobCanvas" style="z-index: 10;background-color: transparent;"></canvas>
+		<!--
+		<canvas id="leadCanvas" style="z-index: 20;background-color: transparent;"></canvas>
+		<div id="infoBox" style="display:none;z-index: 30;background-color: white;position: absolute; width: 300px;height: 40px;"></div>		
+	-->
+	</div>
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+<!-- Required dashboard js -->
+
+<script th:src="@{/libs/peity/jquery.peity.min.js}"></script>
+<script th:src="@{/libs/chartist/chartist.min.js}"></script>
+<script th:src="@{/libs/chartist-plugin-tooltips/chartist-plugin-tooltip.min.js}"></script>
+
+<style>
+  canvas {
+    position: absolute;
+    background-color:rgba(70, 40, 151, 0.5);
+  }
+</style>
+<script>
+var parts,pkgs,shapse,shapeleads,board,arrays,components;
+var canvas;
+var cntxt;
+var leadCanvas;
+var leadCntxt;
+var componentInfoList = [];
+jQuery(document).ready(function() {
+	loadData();
+
+	canvas = document.getElementById("jobCanvas");
+	cntxt = canvas.getContext('2d');
+	$("#jobCanvas").parent().append('<canvas id="leadCanvas" style="z-index: 20;background-color: transparent;"></canvas>');
+	$("#jobCanvas").parent().append('<div id="infoBox" style="display:none;z-index: 30;background-color: white;position: absolute; width: 300px;height: 40px;"></div>');
+	leadCanvas = document.getElementById("leadCanvas");
+	leadCntxt = leadCanvas.getContext('2d');
+	//canvas.width = 1000;
+	//canvas.height =1000;
+
+	shapeDraw();
+});
+
+parseJob = function(){
+
+	//Board
+	var bw = board.board.w, bh = board.board.h , borgh = board.board.orgH , bangle = board.board.rot;
+	// Array
+	var ax, ay, aorgx, aorgy, aangle;
+	// Comp
+	var cx , cy , cOx , cOy;
+
+	// part, pkg
+	var part, pkg, shape;
+	$.each(arrays , function(index, arr){
+		ax = arr.x;
+		ay = arr.y;
+		aorgx = arr.orgx;
+		aorgy = arr.orgy;
+		aangle = arr.rot;
+
+		//aangle = 180;
+		$.each(components , function(index2, comp){
+			pkg = getJsonData("pkg", "name" , comp.part);
+			part = getJsonData("part", "name" , comp.part);
+			shape = getJsonData("shape", "uid" , pkg.pkgbody.shuid);
+
+			var componentAngle = bangle + aangle + comp.fAngleForInsp + comp.fAngleByCompItSelf + part.OffsetAngForUsrRefAng;
+
+			var ptBasePosMm = new Point();
+			ptBasePosMm.x = parseFloat(comp.x + pkg.pkgbody.x);
+			ptBasePosMm.y = parseFloat(comp.y - pkg.pkgbody.y);
+			
+			var ptArrayPosMm = new Point();
+			ptArrayPosMm.x = parseFloat(ax);
+			ptArrayPosMm.y = parseFloat(ay);
+
+			var ptArrayRotCenterMm = new Point();
+			ptArrayRotCenterMm.x = parseFloat(aorgx);
+			ptArrayRotCenterMm.y = parseFloat(aorgy);
+			
+			//console.log(ptBasePosMm , borgh , bangle, ptArrayPosMm , aangle, ptArrayRotCenterMm);
+
+			var real = calcPosOnPCBViewFromBasePosMm(ptBasePosMm , borgh , bangle, ptArrayPosMm , aangle, ptArrayRotCenterMm);
+
+			var x = ((real.x) - (shape.rc.w /2)) * widthMagnification;
+			var y = ((real.y) - (shape.rc.h /2))  * heightMagnification;
+			var width = (shape.rc.w ) *widthMagnification;
+			var height = (shape.rc.h ) * heightMagnification;
+			
+
+
+			//drawRectangle("#00FF00" , ((real.x) - (shape.rc.w /2)) * widthMagnification , ((real.y) - (shape.rc.h /2))  * heightMagnification, (shape.rc.w ) *widthMagnification, (shape.rc.h ) * heightMagnification , componentAngle);
+			drawRectangle("#00FF00" , x, y, width , height ,componentAngle);
+
+			if(pkg.pkgpins != '' && pkg.pkgpins.length != 0){		
+
+				$.each(pkg.pkgpins.pkgpin , function(index, pin){
+					if(typeof pin.shuid == 'undefined'){				
+						lead = getJsonData("shapeLead", "uid" , pkg.pkgpins.pkgpin.shuid);
+					} else {
+						lead = getJsonData("shapeLead", "uid" , pin.shuid);
+					}
+					if(typeof lead != 'undefined'){
+						var leadX = real.x + pin.x;
+						var leadY = real.y + pin.y;
+						var leadX1 = lead.rc.w;
+						var leadY1 = lead.rc.h;
+						leadX = ((leadX - parseFloat(leadX1) / 2));
+						leadY = ((leadY - parseFloat(leadY1) / 2));
+						leadCenterX = leadX + leadX1;
+						leadCenterY = leadY + leadY1;
+						drawLead("#0000FF" , (real.x * widthMagnification), (real.y * heightMagnification) ,  leadX * widthMagnification , leadY * heightMagnification , leadX1 * widthMagnification , leadY1 * heightMagnification , componentAngle , pin.rot);
+					} 
+				});
+			}
+			var componentInfo  = {};
+			componentInfo.x = x;
+			componentInfo.y = y;
+			componentInfo.w = width;
+			componentInfo.h = height;
+			componentInfo.angle = componentAngle;
+			componentInfo.name = comp.name;
+			componentInfo.part = comp.part;
+			componentInfo.pkg = pkg.name;
+			componentInfo.array = arr.num;
+
+			//componentInfo.array = arr.num;
+			componentInfoList.push(componentInfo);
+
+			//drawRectangle("#00FF00" , ((real.x + pkg.pkgbody.x) - (shape.rc.w /2)) * 3 + 500, ((real.y + pkg.pkgbody.y) - (shape.rc.h /2))  *3, (shape.rc.w ) *3, (shape.rc.h ) *3 , componentAngle);
+
+			//drawRectangle("#00FF00" , ((real.x + pkg.pkgbody.x) + (shape.rc.w  / 2)) * 3 , ((real.y - pkg.pkgbody.y) + (shape.rc.h  / 2)) * 3 , (shape.rc.w ) * 3, (shape.rc.h ) * 3 , componentAngle);
+
+			//drawRectangle("#00FF00" , real.x * 3 , real.y * 3, (shape.rc.w ) *3, (shape.rc.h ) *3 , componentAngle);
+		});
+		//return false;
+	});
+
+	console.log(componentInfoList);
+}
+
+
+redraw = function(){
+
+}
+
+shapeDraw = function()	{
+	var x, y, width, height, centerX, centerY;
+	var imageObj = new Image();
+
+
+	imageObj.onload = function() { 	
+		var imgWidth = this.width;
+		var imgHeight = this.height;            
+		
+		if(imgWidth > imgHeight) {
+			if(imgWidth < 1000){
+				var realImgWidth = imgWidth;
+				imgWidth = 1000;
+				imgHeight = imgWidth * imgHeight/realImgWidth;
+			}
+		} else if(imgWidth < imgHeight){
+			if(imgHeight < 1000){
+				var realImgHeight = imgHeight;
+				imgHeight = 1000;
+				imgWidth = imgHeight * imgWidth/realImgHeight;
+			}
+		} else {
+			imgWidth = 1000;
+			imgHeight = 1000;
+		}
+
+		imageWidth = imgWidth;
+		imageHeight = imgHeight;
+		initCanvas(imageWidth , imageHeight);
+		imageObj.width = imgWidth;
+		imageObj.height= imgHeight;
+		cntxt.drawImage(this, 0, 0 , imgWidth , imgHeight);
+		cntxt.globalAlpha = 1;
+		parseJob();
+	};
+	
+	wholeBoardImgSrc="/js/job.png";
+	
+	if(wholeBoardImgSrc != ""){
+		try{
+			imageObj.src = wholeBoardImgSrc;
+		}catch(e){
+			loadDataDraw();
+		}
+	} else {
+		canvas.width = 3000;
+		canvas.height = 3000;
+		copyCanvas.width = 3000;
+		copyCanvas.height = 3000;
+	}
+
+	canvas.addEventListener('click', canvasClick);
+	leadCanvas.addEventListener('click', canvasClick);
+};
+
+var widthMagnification , heightMagnification ; 
+initCanvas = function(imgWidth , imgHeight) {
+	widthMagnification = parseFloat(imgWidth / board.board.w);		
+	heightMagnification = parseFloat(imgHeight / board.board.h);
+	canvas.width = imgWidth;
+	canvas.height = imgHeight;
+	leadCanvas.width = imgWidth;
+	leadCanvas.height = imgHeight;
+};
+
+
+canvasClick = function(e) {
+	
+	var x = e.pageX - canvas.offsetLeft;
+	var y = e.pageY - canvas.offsetTop;
+	var canvasW = canvas.width;
+	var canvasY = canvas.height;
+	console.log(x , y );
+	var comp;
+	var selX, selY, selX1, selY1;				
+	$.each(componentInfoList , function(index, componentInfo){
+
+		if((componentInfo.x <= x) && (x <= componentInfo.x + componentInfo.w) && (componentInfo.y <= y) && (y <= componentInfo.y+componentInfo.h)){
+			console.log(componentInfo);
+			drawRectangle("#000000" , componentInfo.x, componentInfo.y, componentInfo.w , componentInfo.h ,componentInfo.angle);
+			drawInformation("#FFFFFF" , componentInfo);
+			return false;
+		} 
+	});
+};
+
+drawRectangle = function(color, x, y, x1, y1, angle) {
+	cntxt.strokeStyle = color;
+	cntxt.translate((x + x1/2), (y + y1/2));
+	cntxt.rotate((Math.PI/180)* -angle);
+	cntxt.translate(-(x + x1/2), -(y + y1/2));
+	cntxt.strokeRect(x, y, x1, y1);
+	cntxt.translate((x + x1/2), (y + y1/2));
+	cntxt.rotate((Math.PI/180)* angle);
+	cntxt.translate(-(x + x1/2), -(y + y1/2));
+};
+
+
+var infoBoxW = 300 , infoBoxH = 40;
+drawInformation = function(color, componentInfo) {
+	leadCntxt.fillStyle = color;
+
+	if(componentInfo.x + componentInfo.w + infoBoxW > canvas.width){
+		x = componentInfo.x- infoBoxW - 5;
+	} else {
+		x = componentInfo.x + componentInfo.w + 5;
+	}
+
+	if(componentInfo.y + componentInfo.h + infoBoxH > canvas.height){
+		y = componentInfo.y - infoBoxH - 5;
+
+	} else {
+		y = componentInfo.y + componentInfo.h + 5;
+	}
+
+
+	$("#infoBox").show();
+	$("#infoBox").html("Component Name : " + componentInfo.name +"<br/>" + "Part Name : " + componentInfo.part );
+	$("#infoBox").attr("style" , "z-index: 30;background-color: white;position: absolute; width: 300px;height: 40px;");
+	x = $("#infoBox").position().left + x;
+	y = $("#infoBox").position().top + y;
+	$("#infoBox").attr("style" , "z-index: 30;background-color: white;position: absolute; width: 300px;height: 40px;left:"+x+"px;top:"+y+"px;");
+
+
+	//console.log($("#infoBox").position().left);
+	//console.log($("#infoBox").position().top);
+	//leadCntxt.fillRect(x, y, infoBoxW, infoBoxH);
+}
+
+drawLead = function(color, pkgX, pkgY, x, y, x1, y1, angle , leadAngle) {
+	leadCntxt.strokeStyle = color;	
+	leadCntxt.translate(pkgX , pkgY);
+	leadCntxt.rotate((Math.PI/180)* -angle);
+	leadCntxt.translate(-pkgX , -pkgY);
+
+	leadCntxt.translate((x + x1/2), (y + y1/2));
+	leadCntxt.rotate((Math.PI/180)* -leadAngle);
+	leadCntxt.translate(-(x + x1/2), -(y + y1/2));
+
+	leadCntxt.strokeRect(x, y, x1, y1);
+
+	leadCntxt.translate((x + x1/2), (y + y1/2));
+	leadCntxt.rotate((Math.PI/180)* leadAngle);
+	leadCntxt.translate(-(x + x1/2), -(y + y1/2));
+
+	leadCntxt.translate(pkgX , pkgY);
+	leadCntxt.rotate((Math.PI/180)* angle);
+	leadCntxt.translate(-pkgX , -pkgY);
+};
+
+function calcPosOnPCBViewFromBasePosMm(ptBasePosMm , fOrgBoardH , fBoardAngle, ptArrayPosMm , fArrayAngle, ptArrayRotCenterMm){
+	var ptPos = ptBasePosMm;
+	var ptPosMmPCB = new Point();
+
+	ptPos.x = ptPos.x + ptArrayPosMm.x;
+	ptPos.y = ptPos.y - ptArrayPosMm.y;
+
+	var ptCurArrayRotCenter = new Point();
+	if(Math.abs(fBoardAngle) > 0.01){
+		ptCurArrayRotCenter = ptArrayRotCenterMm;
+		ptCurArrayRotCenter.y = ptCurArrayRotCenter.y * -1;
+	} else {
+		var fRotCenterMmY = fOrgBoardH - ptArrayRotCenterMm.y;
+		ptCurArrayRotCenter.x = ptArrayRotCenterMm.x;
+		ptCurArrayRotCenter.y = fRotCenterMmY;
+	}
+
+	if(fArrayAngle > 0.01){
+		ptPos = rotate(ptPos , ptCurArrayRotCenter, fArrayAngle * -1);
+		//ptPos = getRotatePoint(ptPos.x, ptPos.y, ptCurArrayRotCenter.x, ptCurArrayRotCenter.y, fArrayAngle * -1);
+	}
+
+	ptPos.y = fOrgBoardH - ptPos.y;
+	ptPosMmPCB = ptPos;
+	ptPosMmPCB.y = fOrgBoardH - ptPosMmPCB.y
+	return ptPosMmPCB;
+}
+
+function rotate(ptRot , ptCenter, angle){	
+	var dX = ptRot.x;
+	var dY = ptRot.y;
+
+	dX = dX -  ptCenter.x;
+	dY = dY -  ptCenter.y;
+
+	point = rotate2( dX, dY, angle);
+
+	dX = point.x + ptCenter.x;
+	dY = point.y + ptCenter.y;
+
+	var point = new Point();
+	point.x = parseFloat(dX);
+	point.y = parseFloat(dY);
+
+	return point;
+}
+
+function rotate2(x, y, angle) {
+	var sinValue = 1., cosValue = 0.;
+	var sinCos = getFactors(angle, sinValue, cosValue);
+
+	var sinValue = sinCos.x;
+	var cosValue = sinCos.y;
+	
+	var tempX = x , tempY = y;
+	x = cosValue * tempX - sinValue * tempY;
+	y = sinValue * tempX + cosValue * tempY;
+
+	var point = new Point();
+	point.x = x;
+	point.y = y;
+	return point;
+}
+
+function getFactors(angle, sinValue, cosValue){
+	const  pi = 3.141592;
+	var convAngle = getConvAngle(angle);
+	if (convAngle == 0)
+	{
+		sinValue = 0., cosValue = 1.;
+	} else if (convAngle == 90 || convAngle == -270)
+	{
+		sinValue = 1., cosValue = 0.;
+	} else if (convAngle == 180 || convAngle == -180)
+	{
+		sinValue = 0., cosValue=-1.;
+	} else if (convAngle == 270 || convAngle == -90)
+	{
+		sinValue=-1., cosValue = 0.;
+	} else 
+	{
+		sinValue = sin(convAngle * pi / 180.0);
+		cosValue = cos(convAngle * pi / 180.0);
+	}
+
+	var sinCos = new Point();
+	sinCos.x = sinValue;
+	sinCos.y = cosValue;
+	return sinCos;
+}
+
+function getConvAngle(angle) {
+	var dAngle = Math.abs(angle);
+	if(Math.abs(dAngle - 999) < 0.01){
+		return angle;
+	}
+	
+	var convAngle = angle - parseInt(angle/360.)*360;
+	if (convAngle < 0){
+		convAngle = 360 + convAngle;
+	}
+	return convAngle;
+}
+
+
+
+function loadData(){
+	var schtext = $("#schtxt").val();
+	jQuery.ajax({
+		url: "/js/component.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			components = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+	jQuery.ajax({
+		url: "/js/shape.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			shapes = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+	jQuery.ajax({
+		url: "/js/shapelead.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			shapeleads = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+
+	jQuery.ajax({
+		url: "/js/part.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			parts = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+	jQuery.ajax({
+		url: "/js/pkg.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			pkgs = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+	jQuery.ajax({
+		url: "/js/board.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			board = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+	jQuery.ajax({
+		url: "/js/array.json",
+		dataType: "json",
+		async : false,
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			arrays = response;
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+}
+
+isUndefined = function(obj){
+	if(typeof obj != "undefined"){
+		return false;
+	} else {
+		return true;
+	}
+}
+
+function Point(x, y) {
+		this.x = 0;
+		this.y = 0;
+}
+
+function getRotatePoint(standardX, standardY, iOldX , iOldY , angle){
+	//console.log(standardX, standardY, iOldX , iOldY , angle)
+	var dSetDegree = angle * Math.PI / 180;
+	var cosq = Math.cos(dSetDegree);
+	var sinq = Math.sin(dSetDegree);
+	var sx = iOldX - standardX;
+	var sy = iOldY - standardY;
+	var rx = (sx * cosq - sy * sinq) + standardX; //결과 좌표 x
+	var ry = (sx * sinq + sy * cosq) + standardY; //결과 좌표 y
+	var point = new Point;
+	
+	point.x = rx;
+	point.y = ry;
+	
+	return point;
+}
+
+function getJsonData(data, key, value){
+	var jsonData;
+	if(data == "part"){
+		$.each(parts , function(index, part){
+			if(part[key] == value){
+				jsonData = part;
+				return false;
+			}
+		});
+	} else if(data == "pkg"){
+		$.each(pkgs , function(index, pkg){
+			if(pkg[key] == value){
+				jsonData = pkg;
+				return false;
+			}
+		});
+	} else if(data == "shape"){
+		if(typeof shapes != 'undefined'){
+			$.each(shapes , function(index, shape){
+				if(shape[key] == value){
+					jsonData = shape;
+					return false;
+				}
+			});	
+		}
+	} else if(data =='shapeLead'){
+		$.each(shapeleads , function(index, shape){
+			if(shape[key] == value){
+				jsonData = shape;
+				return false;
+			}
+		});			
+	} else {
+		alert("Type is not Defined");
+	}
+	return jsonData;
+}
+</script>
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>
