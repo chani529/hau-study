@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.QuestionMapper">
+
+    <resultMap id="QuestionMap" type="QuestionVo">
+        <result property="questionId" column="question_id" javaType="int" jdbcType="INTEGER" />
+        <result property="question" column="question" javaType="String" jdbcType="VARCHAR" />
+        <result property="questionType" column="question_type" javaType="String" jdbcType="VARCHAR" />
+        <result property="questionTypeVal" column="question_type_val" javaType="String" jdbcType="VARCHAR" />
+        <result property="answers" column="answers" javaType="String" jdbcType="VARCHAR" />
+        <result property="useFg" column="use_fg" />
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR" />
+        <result property="editedBy" column="edited_by" javaType="String" jdbcType="VARCHAR" />
+    </resultMap>
+
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="questionId != null and questionId != ''">
+                AND qust.question_id = #{questionId}
+            </if>
+            <if test="userFg != null and userFg != ''">
+                AND qust.use_fg = #{userFg}
+            </if>
+            <if test="questionType != null and questionType != ''">
+                AND qust.question_type = #{questionType}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="QuestionVo" resultType="QuestionVo" >
+        SELECT	question_id as questionId
+                , question as question
+                , question_type as questionType
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'QUESTION_TYPE' AND code.code = qust.question_type) as questionTypeVal
+                , answers as answers
+                , use_fg as useFg
+                , edited_at as editedAt
+                , edited_ip as editedIp
+                , edited_by as editedBy
+        FROM tb_question qust
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="QuestionVo" resultType="int">
+        SELECT count(1)
+        FROM tb_question qust
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="QuestionMap" >
+        SELECT qust.* , (SELECT code_title FROM tb_code code WHERE code.p_code = 'QUESTION_TYPE' AND code.code = qust.question_type) as question_type_val
+        FROM tb_question qust
+        WHERE qust.question_id = #{questionId}
+    </select>
+
+    <insert id="insert" parameterType="QuestionVo" useGeneratedKeys="true" keyProperty="questionId">
+        INSERT INTO tb_question (
+                question, question_type, answers, edited_at, edited_ip, edited_by
+            ) values (
+               #{question},  #{questionType},  #{answers},  now(),  #{editedIp},  #{editedBy}
+            )
+            <selectKey resultType="int" order="AFTER" keyProperty="questionId">
+                SELECT LAST_INSERT_ID() as questionId
+            </selectKey>
+    </insert>
+
+    <update id="update" parameterType="QuestionVo">
+         UPDATE tb_question SET
+           edited_at = now()
+        <if test="question != null and question != ''">
+            ,question = #{question}
+        </if>
+        <if test="questionType != null and questionType != ''">
+            ,question_type = #{questionType}
+        </if>
+        <if test="answers != null and answers != ''">
+            ,answers = #{answers}
+        </if>
+        <if test="useFg != null and useFg != ''">
+            ,use_fg = #{useFg}
+        </if>
+        <if test="editedIp != null and editedIp != ''">
+            ,edited_ip = #{editedIp}
+        </if>
+        <if test="editedBy != null and editedBy != ''">
+            ,edited_by = #{editedBy}
+        </if>
+        WHERE question_id = #{questionId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFg != null and useFg != ''">
+                AND qust.use_fg = #{useFg}
+            </if>
+            <if test="question != null and question != ''">
+                AND qust.question like concat('%', #{question}, '%')
+            </if>
+            <if test="questionType != null and questionType != ''">
+                AND qust.question_type = #{questionType}
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( qust.question like concat('%', #{schtext}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="QuestionMap" >
+        SELECT 
+                question_id
+                , question
+                , question_type
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'QUESTION_TYPE' AND code.code = qust.question_type) as question_type_val
+                , answers
+                , use_fg
+                , edited_at
+                , edited_ip
+                , edited_by
+            FROM tb_question qust
+        <include refid="whereParamMap"/>
+        ORDER BY qust.question_id DESC
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryListBySurvey" parameterType="java.util.Map" resultMap="QuestionMap" >
+        SELECT qust.question_id
+                , qust.question
+                , qust.question_type
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'QUESTION_TYPE' AND code.code = qust.question_type) as question_type_val
+                , qust.answers
+                , qust.use_fg
+                , qust.edited_at
+                , qust.edited_ip
+                , qust.edited_by
+        FROM tb_question qust , tb_survey_item itm
+        WHERE qust.question_id = itm.question_id
+        AND itm.survey_id = #{surveyId}
+        ORDER BY qust.question_id DESC
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+        FROM tb_question qust
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_question SET
+            use_fg = 'N'
+        WHERE question_id = #{questionId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+        FROM tb_question
+        WHERE question_id = #{questionId}
+    </delete>
+
+</mapper>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+	<!-- DataTables -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css}" />
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css}" />
+	<!-- Responsive datatable examples -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css}" />
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+			<!-- start page title -->
+			<div class="row align-items-center">
+				<div class="col-sm-6">
+					<div class="page-title-box">
+						<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+						<ol class="breadcrumb mb-0">
+							<li class="breadcrumb-item"><a href="/">home</a></li>
+							<li class="breadcrumb-item"><a href="/view/hospotal">병원 관리</a></li>
+							<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+						</ol>
+					</div>
+				</div>
+
+				<div class="col-sm-6">
+				</div>
+			</div>
+			<!-- end page title -->
+
+
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<form id="registForm" name="registForm">
+							<div class="card-body">
+								<th:block th:if="${submitType != 'update'}">
+									<div class="card-body text-center">
+                                        <div class="color-box p-1 rounded bg-warning">
+											<div class="col-xl-3 col-lg-4 col-sm-6 my-2 text-white"><i class="mdi mdi-information-outline"></i><span>  대표의사 지정은 병원 생성 후 의사를 등록 후 가능합다.</span></div>												
+                                        </div>
+                                    </div>
+								</th:block>
+								<div class="form-group row">
+									<label for="hospitalName" class="col-sm-2 col-form-label">병원명</label>
+									<div class="col-sm-4">
+										<input id="hospitalName" name="hospitalName" required class="form-control" minlength="3" maxlength="10" type="text" placeholder="" />
+									</div>
+
+									<th:block th:if="${submitType == 'update'}">
+										<label for="mainDoctorId" class="col-sm-2 col-form-label">대표의사</label>
+										<div class="col-sm-4">
+											<select class="form-control" th:name="mainDoctorId" th:id="mainDoctorId">
+												<option th:each="val : ${doctorList}"
+														th:value="${val?.doctorId}"
+														th:utext="${val?.doctorName}"></option>
+											</select>
+										</div>
+									</th:block>
+								</div>
+								
+
+								<div class="form-group row">
+									<label for="address1" class="col-sm-2 col-form-label">주소</label>
+									<label for="postCode" style="display: none;">우편번호</label>
+									<div class="col-sm-1">
+										<input id="postCode" name="postCode" required readonly class="form-control" maxlength="10" type="text" placeholder="" />
+									</div>
+									<div class="col-sm-2">
+										<input id="address1" name="address1" required readonly class="form-control" maxlength="50" type="text" placeholder="" />
+									</div>
+									<div class="col-sm-1">
+										<button type="button" onclick="searchAddresS();" class="btn btn-primary">조회</button>
+									</div>
+									<label for="address2" class="col-sm-2 col-form-label">상세주소</label>
+									<div class="col-sm-4">
+										<input id="address2" name="address2" required class="form-control" maxlength="50" type="text" placeholder="" />
+									</div>
+								</div>
+								
+								
+								<div class="form-group row" style="height: 300px;">
+									<label for="map" class="col-sm-2 col-form-label">지도</label>
+									<div class="col-sm-4" id="map">
+										<input id="latitude" name="latitude" class="form-control" type="hidden" placeholder="" />
+										<input id="longitude" name="longitude" class="form-control" type="hidden" placeholder="" />
+									</div>
+
+
+									<label for="subjects" class="col-sm-2 col-form-label">진료과목</label>
+									<div class="col-sm-4">
+										<input type="hidden" id="subject" name="subject">
+										<select style="height: 300px;" required class="form-control" th:name="subjects" th:id="subjects" multiple>
+											<option th:each="val : ${subjects}"
+													th:value="${val?.code}"
+													th:utext="${val?.codeTitle}"></option>
+										</select>
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="imgfile" class="col-sm-2 col-form-label">사진</label>
+									<div class="col-sm-10">
+										<th:block th:if="${submitType != 'update'}">
+											<input id="imgfile1" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile2" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile3" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile4" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile5" name="imgfile[]" class="form-control" type="file" />
+										</th:block>
+										<th:block th:if="${submitType == 'update'}">
+											<input id="imgfile1" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile2" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile3" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile4" name="imgfile[]" class="form-control" type="file" />
+											<input id="imgfile5" name="imgfile[]" class="form-control" type="file" />
+
+											<div class="form-group row">
+												<div class="col-sm-2">
+													<p id="imgArea1" style="padding: 8px 0px;width: 100%;"></p>
+												</div>
+												<div class="col-sm-2">
+													<p id="imgArea2" style="padding: 8px 0px;width: 100%;"></p>
+												</div>
+												<div class="col-sm-2">
+													<p id="imgArea3" style="padding: 8px 0px;width: 100%;"></p>
+												</div>
+												<div class="col-sm-2">
+													<p id="imgArea4" style="padding: 8px 0px;width: 100%;"></p>
+												</div>
+												<div class="col-sm-2">
+													<p id="imgArea5" style="padding: 8px 0px;width: 100%;"></p>
+												</div>
+											</div>
+										</th:block>
+									</div>
+								</div>
+								
+								<div class="form-group row">
+									<label for="treatStatus" class="col-sm-2 col-form-label">진료가능여부</label>
+									<div class="col-sm-4">
+										<select class="form-control" th:name="treatStatus" th:id="treatStatus">
+											<option th:each="val : ${treatStatus}"
+													th:value="${val?.code}"
+													th:utext="${val?.codeTitle}"></option>
+										</select>
+									</div>
+								</div>
+
+
+								<div class="form-group row">
+									<label for="times" class="col-sm-2 col-form-label">진료 시간</label>
+									
+									<label for="description" class="col-sm-1 col-form-label">월</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="mon1" name="mon" type="time" value="09:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="mon2" name="mon" type="time" value="18:00" >
+									</div>
+									<label for="description" class="col-sm-1 col-form-label">화</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="tue1" name="tue" type="time" value="09:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="tue2" name="tue" type="time" value="18:00" >
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="times" class="col-sm-2 col-form-label"></label>
+									
+									<label for="description" class="col-sm-1 col-form-label">수</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="wed1" name="wed" type="time" value="09:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="wed2" name="wed" type="time" value="18:00" >
+									</div>
+									<label for="description" class="col-sm-1 col-form-label">목</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="thu1" name="thu" type="time" value="09:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="thu2" name="thu" type="time" value="18:00" >
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="times" class="col-sm-2 col-form-label"></label>
+									
+									<label for="description" class="col-sm-1 col-form-label">금</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="fri1" name="fri" type="time" value="09:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="fri2" name="fri" type="time" value="18:00" >
+									</div>
+									<label for="description" class="col-sm-1 col-form-label">토</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="sat1" name="sat" type="time" value="09:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="sat2" name="sat" type="time" value="18:00" >
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="times" class="col-sm-2 col-form-label"></label>
+									<label for="description" class="col-sm-1 col-form-label">일</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="sun1" name="sun" type="time" value="" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="sun2" name="sun" type="time" value="" >
+									</div>
+									<label for="description" class="col-sm-1 col-form-label">점심시간</label>
+									<div class="col-sm-2">
+										<input class="form-control" id="lunch1" name="lunch" type="time" value="12:00" >
+									</div>
+									<div class="col-sm-2">
+										<input class="form-control" id="lunch2" name="lunch" type="time" value="13:00" >
+									</div>
+								</div>
+
+
+								<div class="form-group row">
+									<label for="description" class="col-sm-2 col-form-label">설명</label>
+									<div class="col-sm-10"><textarea id="description" name="description" class="form-control"></textarea></div>
+								</div>
+
+								<div class="form-group row">
+									<label for="memo" class="col-sm-2 col-form-label">메모</label>
+									<div class="col-sm-10"><textarea id="memo" name="memo" class="form-control"></textarea></div>
+								</div>			
+
+								<div class="form-group row">
+									<div class="col-sm-12 text-right">
+										<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+										<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+									<th:block th:if="${submitType == 'update'}">
+										<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+									</th:block>
+
+									</div>
+								</div>
+
+							</div>
+						</form>
+					</div>
+				</div> <!-- end col -->
+			</div> <!-- end row -->
+			
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+
+
+<!-- Required datatable js -->
+<!-- <script th:src="@{/libs/datatables.net/js/jquery.dataTables.min.js}"></script> -->
+<script th:src="@{/js/jquery.dataTables.kr.js}"></script>
+<script th:src="@{/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js}"></script>
+<!-- Buttons examples -->
+<script th:src="@{/libs/datatables.net-buttons/js/dataTables.buttons.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js}"></script>
+<script th:src="@{/libs/jszip/jszip.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/pdfmake.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/vfs_fonts.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.html5.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.print.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.colVis.min.js}"></script>
+<!-- Responsive examples -->
+<script th:src="@{/libs/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js}"></script>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+
+<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js?libraries=services(appkey=${appKey})}"></script>
+
+
+<script>
+var submitType = "[[${submitType}]]";
+var hospitalId = parseInt("[[${hospitalId}]]");
+
+jQuery(document).ready(function() {
+	if(submitType == "update") {
+		getInfo();
+	}
+});
+
+function getInfo() {
+	jQuery.ajax({
+	url: "/api/hospital/"+hospitalId,
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				$("#hospitalName").val(response.result.data.hospitalName);
+				$("#mainDoctorId").val(response.result.data.mainDoctorId);
+				$("#postCode").val(response.result.data.postCode);
+				$("#address1").val(response.result.data.address1);
+				$("#address2").val(response.result.data.address2);
+
+				var coords = new kakao.maps.LatLng(response.result.data.latitude, response.result.data.longitude);
+				$("#latitude").val(response.result.data.latitude);
+				$("#longitude").val(response.result.data.longitude);
+				$("#treatStatus").val(response.result.data.treatStatus);
+				
+				var marker = new daum.maps.Marker({
+					map: map,
+					position: coords
+				});
+				var infowindow = new daum.maps.InfoWindow({
+					content: '<div style="width:150px;text-align:center;padding:5px 0;">좌표위치</div>'
+				});
+				map.setCenter(coords);
+
+				$("#subject").val(response.result.data.subject);
+				var subjects = response.result.data.subject.split(",");
+				$("#subjects").val(subjects);
+
+
+				var times = JSON.parse(response.result.data.times);
+				$.each(times , function(index, time){
+					$("#"+time.day + "1").val(time.start);
+					$("#"+time.day + "2").val(time.end);
+				});
+				
+				$("#description").val(response.result.data.description);
+				$("#memo").val(response.result.data.memo);
+
+				if(response.result.data.fileList) {
+					console.log();
+					$.each(response.result.data.fileList , function(index, file){
+						$("#imgArea" + (index +1)).html("<img src='"+file.filePath + file.fileSaveName +"' style='max-width:100%' />");
+						$("#imgArea" + (index +1)).show();
+					});
+				}
+			}
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+function evSave() {
+	var saveURL = "/api/hospital";
+	var saveMethod = "POST";
+	if(submitType == "update") {
+		saveMethod = "PUT";
+		saveURL += "/" + hospitalId;
+	} 
+
+	var valid = fromValidateCheck("#registForm");
+	$("#subject").val($("#subjects").val());
+	console.log(JSON.stringify($("#registForm").serializeObject()));
+	if(valid){
+		var doctorInfo = new FormData();
+		doctorInfo.append('hospitalName', $("#hospitalName").val());
+		doctorInfo.append('postCode', $("#postCode").val());
+		doctorInfo.append('address1', $("#address1").val());
+		doctorInfo.append('address2', $("#address2").val());
+
+		doctorInfo.append('latitude', $("#latitude").val());
+		doctorInfo.append('longitude', $("#longitude").val());
+		doctorInfo.append('subject', $("#subjects").val());
+		doctorInfo.append('treatStatus', $("#treatStatus").val());
+		doctorInfo.append('description', $("#description").val());
+		doctorInfo.append('memo', $("#memo").val());
+
+
+		var timeinfo = new Array()
+		var weeks = ['mon','tue','wed','thu','fri','sat','sun','lunch'];
+		$.each(weeks , function(index , week){
+			var day = new Object();
+			day.day = week;
+			day.start = $("#"+week+"1").val();
+			day.end = $("#"+week+"2").val();
+			timeinfo.push(day);
+		});
+		doctorInfo.append('times', JSON.stringify(timeinfo));
+		
+		if(submitType == "update") {
+			doctorInfo.append('mainDoctorId', $("#mainDoctorId").val());
+		}
+
+		var upfile1 = $('#imgfile1')[0].files[0];
+		doctorInfo.append('imgfile', upfile1);
+
+		var upfile2 = $('#imgfile2')[0].files[0];
+		doctorInfo.append('imgfile', upfile2);
+
+		var upfile3 = $('#imgfile3')[0].files[0];
+		doctorInfo.append('imgfile', upfile3);
+
+		var upfile4 = $('#imgfile4')[0].files[0];
+		doctorInfo.append('imgfile', upfile4);
+
+		var upfile5 = $('#imgfile5')[0].files[0];
+		doctorInfo.append('imgfile', upfile5);
+
+		jQuery.ajax({
+			url: saveURL,
+			type: saveMethod,
+			data: doctorInfo, 
+			enctype: 'multipart/form-data',
+			dataType: "json",
+			contentType: false,
+			processData: false,
+			success: function(response) {
+				console.log(response);
+				if(response.status == 'success') {
+					alert("저장하였습니다.");
+					if(submitType == "update") {
+						getInfo();
+					} else {
+						location.href = "/admin/hospital";
+					}
+				} else {
+					alert(response.message);
+				}
+			},
+			error:function(request,status,err){
+				console.log(err);
+			}
+		});
+	}
+}
+
+function evList() {
+	location.href = "/admin/hospital";
+}
+
+function evDelete() {
+	jQuery.ajax({
+		url: "/api/hospital/"+hospitalId,
+		method: "DELETE",
+		success: function(response) {
+			if(response.status == 'success') {
+				alert("삭제하였습니다.");
+				location.href = "/admin/hospital";
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,err) {
+			console.log(err);
+		}
+	});
+}
+
+
+
+// 사용자 조회 스크립트
+var mainTable = null;
+function evSearch() {
+	var schText = $("#schtxt").val();
+	if(schText == ''){
+		alert("검색어를 입력하여 주세요.");
+		$("#schtxt").focus();
+		return false;
+	}
+	mainTable = $('#mainGrid').DataTable({
+		ajax: "/api/user?schtext=" + schText,
+		columns: [
+			//{"data":"rowSeq"},
+			{"data":"userName"},
+			{"data":"account"},
+			{"data":"phone"},
+			{"data":"email"}
+		]
+	});
+
+
+	$('#mainGrid tbody').on('click', 'tr', function () {
+		var rowData = mainTable.row( $(this) ).data();
+		//location.href = "/user/"+ rowData.userId;
+		$("#userId").val(rowData.userId);
+		$("#userName").val(rowData.userName);
+		$("#account").val(rowData.account);
+	});
+
+	//mainTable.buttons().container().appendTo('#mainGrid_wrapper .col-md-6:eq(0)');
+}
+
+
+var mapContainer = document.getElementById("map");
+
+var coordXY   = document.getElementById("coordXY");
+var map;
+var x,y  = "";
+var mapOption = {
+	center: new daum.maps.LatLng(33.450701, 126.570667),
+    level: 3
+};
+var map = new daum.maps.Map(mapContainer, mapOption);
+
+function searchAddresS(){
+	new daum.Postcode({
+        oncomplete: function(data) {
+		   $("#postCode").val(data.zonecode);
+		   $("#address1").val(data.address);
+
+			// 주소-좌표 변환 객체를 생성합니다
+			var geocoder = new kakao.maps.services.Geocoder();
+			// 주소로 좌표를 검색합니다
+			geocoder.addressSearch(data.address, function(result, status) {
+				// 정상적으로 검색이 완료됐으면 
+				if (status === kakao.maps.services.Status.OK) {
+					var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+					$("#latitude").val(result[0].y);
+					$("#longitude").val(result[0].x);
+
+					var marker = new daum.maps.Marker({
+						map: map,
+						position: coords
+					});
+					var infowindow = new daum.maps.InfoWindow({
+						content: '<div style="width:150px;text-align:center;padding:5px 0;">좌표위치</div>'
+					});
+					map.setCenter(coords);
+				} 
+			});    
+        }
+    }).open();
+}
+
+</script>
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

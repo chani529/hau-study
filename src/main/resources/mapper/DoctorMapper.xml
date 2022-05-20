@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.DoctorMapper">
+    <resultMap id="DoctorMap" type="DoctorVo">
+        <result property="rowSeq" column="rowSeq" />
+        <result property="doctorId" column="doctor_id" javaType="int" jdbcType="INTEGER" />
+        <result property="hospitalId" column="hospital_id" javaType="int" jdbcType="INTEGER" />
+        <result property="doctorName" column="doctor_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="signKind" column="sign_kind" javaType="String" jdbcType="VARCHAR" />
+        <result property="license" column="license" javaType="String" jdbcType="VARCHAR" />
+        <result property="phone" column="phone" javaType="String" jdbcType="VARCHAR" />
+        <result property="email" column="email" javaType="String" jdbcType="VARCHAR" />
+        <result property="gender" column="gender" javaType="String" jdbcType="VARCHAR" />
+        <result property="times" column="times" javaType="String" jdbcType="VARCHAR" />
+        <result property="treatStatus" column="treat_status" javaType="String" jdbcType="VARCHAR" />
+        <result property="memo" column="memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="useFlag" column="use_fg" />
+        <collection property="accountVo" column="doctor_id" javaType="AccountVo" select="com.example.study.mapper.AccountMapper.selectOne" />
+        <collection property="hospital" column="hospital_id" javaType="HospitalVo" select="com.example.study.mapper.HospitalMapper.selectOne" />
+    </resultMap>
+
+    <resultMap id="DoctorListMap" type="DoctorListVo">
+        <result property="doctorId" column="doctor_id" javaType="int" jdbcType="INTEGER" />
+        <result property="hospitalId" column="hospital_id" javaType="int" jdbcType="INTEGER" />
+        <result property="doctorName" column="doctor_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="hospitalName" column="hospital_name" javaType="String" jdbcType="VARCHAR" />
+
+        <result property="gender" column="gender" javaType="String" jdbcType="VARCHAR" />
+        <result property="times" column="times" javaType="String" jdbcType="VARCHAR" />
+        <result property="treatStatus" column="treat_status" javaType="String" jdbcType="VARCHAR" />
+        <result property="subject" column="subject" javaType="String" jdbcType="VARCHAR" />
+        <result property="point" column="point" javaType="float" jdbcType="FLOAT" />
+        <result property="reviewCount" column="review_count" javaType="int" jdbcType="INTEGER" />
+        <result property="waitPersonCount" column="wait_person" javaType="int" jdbcType="INTEGER" />
+
+        <result property="signKind" column="sign_kind" javaType="String" jdbcType="VARCHAR" />
+        <result property="license" column="license" javaType="String" jdbcType="VARCHAR" />
+        <result property="phone" column="phone" javaType="String" jdbcType="VARCHAR" />
+        <result property="email" column="email" javaType="String" jdbcType="VARCHAR" />
+        <result property="memo" column="memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="useFlag" column="use_fg" javaType="String" jdbcType="VARCHAR" />
+        <result property="editedBy" column="edited_by" javaType="int" jdbcType="INTEGER" />
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR" />
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+
+        <!--
+        <result property="doctorPicture.fileUrl" column="file_url" javaType="String" jdbcType="VARCHAR" />
+        <result property="doctorPicture.filePath" column="file_path" javaType="String" jdbcType="VARCHAR" />
+        <result property="doctorPicture.fileSaveName" column="file_save_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="doctorPicture.fileRealName" column="file_real_name" javaType="String" jdbcType="VARCHAR" />
+        -->
+        <collection property="doctorPicture" column="{linkKey=doctor_id,linkTable=link_table,linkField=link_field,useFlag=use_fg}" javaType="FileVo" select="com.example.study.mapper.FileMapper.selectList" />
+        <collection property="bestReview" column="{doctorId=doctor_id,hospitalId=hospital_id}" javaType="ReviewVo" select="com.example.study.mapper.ReviewMapper.selectBestReview" />
+        <collection property="accountVo" column="doctor_id" javaType="AccountVo" select="com.example.study.mapper.AccountMapper.selectOne" />
+     </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND dct.use_fg = #{useFlag}
+            </if>
+            <if test="doctorId != null and doctorId != ''">
+                AND dct.doctor_id = #{doctorId}
+            </if>
+            <if test="doctorName != null and doctorName != ''">
+                AND dct.doctor_name like concat('%', #{doctorName}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND dct.phone like concat('%', #{phone}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="DoctorVo" resultType="DoctorVo" >
+        SELECT 
+                doctor_id as doctorId,
+                hospital_id as hospitalId,
+                sign_kind as signKind,
+                doctor_name as doctorName,
+                license as license,
+                subject as subject,
+                treat_status as treatStatus,
+                times as times,
+                phone as phone,
+                email as email,
+                gender as gender,
+                memo as memo,
+                use_fg as useFlag,
+                edited_by as editedBy,
+                edited_ip as editedIp,
+                edited_at as editedAt
+        FROM tb_doctor dct
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="DoctorVo" resultType="int">
+        SELECT count(1)
+        FROM tb_doctor dct
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="DoctorMap" >
+        SELECT dct.*
+        FROM tb_doctor dct
+        WHERE dct.doctor_id = #{doctorId}
+    </select>
+
+
+    <insert id="insert" parameterType="DoctorVo" useGeneratedKeys="true" keyProperty="doctorId">
+        INSERT INTO tb_doctor (
+            doctor_id,
+            hospital_id,
+            doctor_name,
+            sign_kind,
+            license,
+            phone,
+            times,
+            treat_status,
+            subject,
+            email,
+            gender,
+            memo,
+            edited_at
+        ) values (
+            #{doctorId},
+            #{hospitalId},
+            #{doctorName},
+            #{signKind},
+            #{license},
+            #{phone},
+            #{times},
+            #{treatStatus},
+            #{subject},
+            #{email},
+            #{gender},
+            #{memo},
+            now()
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="doctorId">
+            SELECT LAST_INSERT_ID() as doctorId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="DoctorVo">
+    UPDATE tb_doctor SET
+        edited_at = now()
+        <if test="hospitalId != null and hospitalId != ''">
+            ,hospital_id = #{hospitalId}
+        </if>
+        <if test="doctorName != null and doctorName != ''">
+            ,doctor_name = #{doctorName}
+        </if>
+        <if test="license != null and license != ''">
+            ,license = #{license}
+        </if>
+        <if test="phone != null and phone != ''">
+            ,phone = #{phone}
+        </if>
+        <if test="email != null">
+            ,email = #{email}
+        </if>
+        <if test="gender != null">
+            ,gender = #{gender}
+        </if>
+        <if test="times != null">
+            ,times = #{times}
+        </if>
+        <if test="subject != null">
+            ,subject = #{subject}
+        </if>
+        <if test="treatStatus != null">
+            ,treat_status = #{treatStatus}
+        </if>
+        <if test="signKind != null">
+            ,sign_kind = #{signKind}
+        </if>
+        <if test="memo != null">
+            ,memo = #{memo}
+        </if>
+     WHERE doctor_id = #{doctorId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND dct.use_fg = #{useFlag}
+            </if>
+            <if test="hospitalId != null and hospitalId != ''">
+                AND dct.hospital_id = #{hospitalId}
+            </if>
+            <if test="phone != null and phone != ''">
+                AND dct.phone = #{phone}
+            </if>
+            <if test="treatStatus!= null and treatStatus != ''">
+                AND dct.treat_status = #{treatStatus}
+            </if>
+            <if test="subject!= null and subject != ''">
+                AND dct.subject like concat('%', #{subject}, '%')
+            </if>
+            <if test="doctorName != null and doctorName != ''">
+                AND dct.doctor_name like concat('%', #{doctorName}, '%')
+            </if>
+            <if test="scPhone != null and scPhone != ''">
+              AND dct.phone like concat('%', #{scPhone}, '%')
+            </if>
+            <if test="schtext != null and schtext != ''">
+              AND ( dct.doctor_name like concat('%', #{schtext}, '%')
+                 or dct.phone like concat('%', #{schtext}, '%') )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="DoctorMap" >
+    SELECT dct.*
+      FROM (
+           SELECT 
+                dct.doctor_id,
+                dct.hospital_id,
+                dct.doctor_name,
+                dct.sign_kind,
+                dct.license,
+                dct.phone,
+                dct.email,
+                dct.gender,
+                dct.treat_status,
+                dct.subject,
+                dct.times,
+                dct.memo,
+                dct.edited_at
+             FROM tb_doctor dct JOIN  tb_hospital hopt ON dct.hospital_id = hopt.hospital_id
+        <include refid="whereParamMap"/>
+         ORDER BY dct.doctor_name DESC
+           ) dct
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+        FROM tb_doctor dct
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_doctor SET
+           use_fg = 'N'
+        WHERE doctor_id = #{doctorId}
+    </update>
+
+
+    <select id="selectByEmail" parameterType="string" resultMap="DoctorMap" >
+        SELECT dct.*
+        FROM tb_doctor dct
+        WHERE email = #{email}
+    </select>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+        FROM tb_doctor
+        WHERE doctor_id = #{doctorId}
+    </delete>
+
+    <select id="selectDoctorList" parameterType="java.util.Map" resultMap="DoctorListMap">
+        SELECT *
+               , (SELECT IFNULL(COUNT(1) , 0) FROM tb_reservation trs WHERE trs.reserve_status='F' AND trs.doctor_id = b.doctor_id AND trs.hospital_id = b.hospital_id) as wait_person
+               , 'tb_doctor' as link_table
+               , 'picture' as link_field
+          FROM (
+              SELECT dt.* 
+                     , tr.point 
+                     , tr.review_count
+                FROM (
+                    SELECT doc.*
+                          <!-- , hspt.subject-->
+                           , hspt.hospital_name
+                           , hspt.latitude 
+                           , hspt.longitude 
+                           , hspt.address1
+                      FROM tb_doctor doc
+                           , tb_hospital hspt
+                     WHERE doc.hospital_id = hspt.hospital_id
+                       AND doc.use_fg = 'Y' 
+                       AND hspt.use_fg = 'Y'
+                    <if test="keyword != null and keyword != ''">
+                        AND ( doc.doctor_name like concat('%', #{keyword}, '%')
+                            or hspt.hospital_name like concat('%', #{keyword}, '%') 
+                            or hspt.address1 like concat('%', #{keyword}, '%') 
+                            or doc.doctor_id IN (
+                                SELECT doctor_id
+                                FROM tb_doctor_tag tag
+                                WHERE tag.use_fg = 'Y'
+                                AND tag.tag like concat('%', #{keyword}, '%') 
+                            )
+                        )
+                    </if>
+                    <if test="hospitalId != null and hospitalId != ''">
+                        AND hspt.hospital_id = #{hospitalId}
+                    </if>
+                    <if test="doctorId != null and doctorId != ''">
+                        AND doc.doctor_id = #{doctorId}
+                    </if>
+                    ) dt
+                    LEFT OUTER JOIN (
+                        SELECT hospital_id
+                               , doctor_id
+                               , IFNULL(AVG(point) , 0) as point
+                               , IFNULL(COUNT(1) , 0) as review_count
+                          FROM tb_review tr 
+                               , tb_treat tt 
+                         WHERE tr.treat_id = tt.treat_id 
+                           AND tr.use_fg = 'Y' 
+                           AND tt.use_fg = 'Y'
+                         GROUP BY tt.hospital_id , tt.doctor_id
+                     ) tr
+                    ON dt.hospital_id = tr.hospital_id AND dt.doctor_id = tr.doctor_id
+                ) b
+                LEFT OUTER JOIN tb_file  tf
+                ON (tf.use_fg = 'Y' AND tf.link_key = doctor_id AND tf.link_table ='tb_doctor' AND tf.link_field = 'picture' )
+            <if test="order != null and order != ''">
+                <if test="order == 'dist'">
+                    <if test="lat != null and lat !='' and lng != null and lng != ''">
+                        ORDER BY (#{lat} - latitude ) * (#{lat} - latitude ) + (#{lng} - longitude) * (#{lng} - longitude) ASC
+                    </if>                    
+                </if>
+                <if test="order == 'review'">
+                    ORDER BY review_count DESC
+                </if>
+                <if test="order == 'date'">
+                    ORDER BY edited_at DESC
+                </if>
+            </if>
+            <if test="order == null or order == ''">
+                ORDER BY point DESC , review_count DESC , doctor_name ASC
+            </if>
+            <if test="pageSize != null and pageSize != ''">
+                LIMIT <if test="skipCount != null and skipCount != ''">${skipCount} , </if> ${pageSize}
+            </if>
+    </select>
+
+</mapper>

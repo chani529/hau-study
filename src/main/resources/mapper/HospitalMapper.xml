@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.HospitalMapper">
+
+    <resultMap id="HospitalMap" type="HospitalVo">
+        <result property="rowSeq" column="rowSeq" />
+        <result property="hospitalId" column="hospital_id" javaType="int" jdbcType="INTEGER" />
+        <result property="mainDoctorId" column="main_doctor_id" javaType="int" jdbcType="INTEGER" />
+        <result property="hospitalName" column="hospital_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="postCode" column="post_code" javaType="String" jdbcType="VARCHAR" />
+        <result property="address1" column="address1" javaType="String" jdbcType="VARCHAR" />
+        <result property="address2" column="address2" javaType="String" jdbcType="VARCHAR" />
+        <result property="latitude" column="latitude" javaType="String" jdbcType="VARCHAR" />
+        <result property="longitude" column="longitude" javaType="String" jdbcType="VARCHAR" />
+        <result property="subject" column="subject" javaType="String" jdbcType="VARCHAR" />
+        <result property="treatStatus" column="treat_status" javaType="String" jdbcType="VARCHAR" />
+        <result property="description" column="description" javaType="String" jdbcType="VARCHAR" />
+        <result property="times" column="times" javaType="String" jdbcType="VARCHAR" />
+        <result property="memo" column="memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+        <result property="useFlag" column="use_fg" />
+        <collection property="fileList" column="{linkKey=hospital_id,linkTable=link_table,linkField=link_field,useFlag=use_fg}" javaType="java.util.List" select="com.example.study.mapper.FileMapper.selectList" />
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="hospitalId != null and hospitalId != ''">
+                AND hspt.hospital_id = #{hospitalId}
+            </if>
+            <if test="useFlag != null and useFlag != ''">
+                AND hspt.use_fg = #{useFlag}
+            </if>
+            <if test="treatStatus != null and treatStatus != ''">
+                AND hspt.treat_status = #{treatStatus}
+            </if>
+            <if test="subject != null and subject != ''">
+                AND hspt.subject like concat('%', #{subject}, '%')
+            </if>
+            <if test="hospitalName != null and hospitalName != ''">
+                AND hspt.hospital_name like concat('%', #{hospitalName}, '%')
+            </if>
+            <if test="address1 != null and address1 != ''">
+                AND hspt.address1 like concat('%', #{address1}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="HospitalVo" resultType="HospitalVo" >
+    SELECT 
+            hospital_id as hospitalId,
+            main_doctor_id as mainDoctorId,
+            hospital_name as hospitalName,
+            post_code as postCode,
+            address1 as address1,
+            address2 as address2,
+            latitude as latitude,
+            longitude as longitude,
+            subject as subject,
+            treat_status as treatStatus,
+            description as description,
+            times as times,
+            memo as memo,
+            use_fg as useFlag,
+            edited_by as editedBy,
+            edited_ip as editedIp,
+            edited_at as editedAt
+      FROM tb_hospital hspt
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="HospitalVo" resultType="int">
+    SELECT count(1)
+      FROM tb_hospital hspt
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="HospitalMap" >
+    SELECT hspt.*
+           , 'tb_hospital' as link_table
+           , 'picture' as link_field
+      FROM tb_hospital hspt
+     WHERE hspt.hospital_id = #{hospitalId}
+    </select>
+
+    <insert id="insert" parameterType="HospitalVo" useGeneratedKeys="true" keyProperty="hospitalId">
+    INSERT INTO tb_hospital (
+        main_doctor_id
+               ,hospital_name
+               ,post_code
+               ,address1
+               ,address2
+               ,latitude
+               ,longitude
+               ,subject
+               ,treat_status
+               ,description
+               ,times
+               ,memo
+               ,edited_at
+              ) values (
+                #{hospitalName}
+               ,#{psotCode}
+               ,#{address1}
+               ,#{address2}
+               ,#{latitude}
+               ,#{longitude}
+               ,#{subject}
+               ,#{treatStatus}
+               ,#{description}
+               ,#{times}
+               ,#{memo}
+               ,now()
+              )
+        <selectKey resultType="int" order="AFTER" keyProperty="hospitalId">
+            SELECT LAST_INSERT_ID() as hospitalId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="HospitalVo">
+    UPDATE tb_hospital SET
+           edited_at = now()
+        <if test="mainDoctorId != null">
+          ,main_doctor_id = #{mainDoctorId}
+        </if>
+        <if test="hospitalName != null and hospitalName != ''">
+          ,hospital_name = #{hospitalName}
+        </if>
+        <if test="postCode != null and postCode != ''">
+          ,post_code = #{postCode}
+        </if>
+        <if test="address1 != null and address1 != ''">
+          ,address1 = #{address1}
+        </if>
+        <if test="address2 != null and address2 != ''">
+            ,address2 = #{address2}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            ,latitude = #{latitude}
+        </if>
+        <if test="longitude != null and longitude != ''">
+            ,longitude = #{longitude}
+        </if>
+        <if test="subject != null and subject != ''">
+            ,subject = #{subject}
+        </if>
+        <if test="treatStatus != null and treatStatus != ''">
+            ,treat_status = #{treatStatus}
+        </if>
+        <if test="description != null and description != ''">
+            ,description = #{description}
+        </if>
+        <if test="times != null and times != ''">
+            ,times = #{times}
+        </if>
+        <if test="memo != null">
+          ,memo = #{memo}
+        </if>
+     WHERE hospital_id = #{hospitalId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND hspt.use_fg = #{useFlag}
+            </if>
+            <if test="scHospitalName != null and scHospitalName != ''">
+                AND hspt.hospital_name like concat('%', #{scHospitalName}, '%')
+            </if>
+            <if test="scAddress != null and scAddress != ''">
+                AND hspt.address1 like concat('%', #{scAddress}, '%')
+            </if>
+            <if test="scSubject != null and scSubject != ''">
+                AND hspt.subject like concat('%', #{scSubject}, '%')
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( hspt.hospital_name like concat('%', #{schtext}, '%')
+                or hspt.address1 like concat('%', #{schtext}, '%')
+                or hspt.subject like concat('%', #{schtext}, '%')
+                or hospital_id in (
+                    SELECT hospital_id 
+                      FROM tb_hospital_tag 
+                      WHERE tag like concat('%', #{schtext}, '%')
+                    )
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="HospitalMap" >
+    SELECT hspt.*
+           , 'tb_hospital' as link_table
+           , 'picture' as link_field
+      FROM (
+           SELECT hospital_id, 
+                hospital_name, 
+                address1, address2,
+                latitude, 
+                longitude, 
+                subject,
+                treat_status,
+                use_fg,
+             @ROWNUM := @ROWNUM + 1 as rowSeq
+             FROM tb_hospital hspt, ( SELECT @ROWNUM := 0 ) start_row
+        <include refid="whereParamMap"/>
+         ORDER BY hspt.hospital_name
+           ) hspt
+        <if test="listCount != null and listCount != ''">
+     LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+    SELECT count(1)
+      FROM tb_hospital hspt
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_hospital SET
+           use_fg = 'N'
+     WHERE hospital_id = #{hospitalId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+    DELETE
+      FROM tb_hospital
+     WHERE hospital_id = #{hospitalId}
+    </delete>
+
+</mapper>

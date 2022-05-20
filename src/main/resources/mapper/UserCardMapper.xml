@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.UserCardMapper">
+    <resultMap id="UserCardMap" type="UserCardVo">
+        <result property="rowSeq" column="rowSeq" />
+        <result property="cardId" column="card_id" javaType="int" jdbcType="INTEGER" />
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER" />
+        <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="cardKind" column="card_kind" javaType="String" jdbcType="VARCHAR" />
+        <result property="cardNumber" column="card_no" javaType="String" jdbcType="VARCHAR" />
+        <result property="cardCvc" column="card_cvc" javaType="String" jdbcType="VARCHAR" />
+        <result property="cardYymm" column="card_yymm" javaType="String" jdbcType="VARCHAR" />
+        <result property="cardCompany" column="card_company" javaType="String" jdbcType="VARCHAR" />
+        <result property="extraInfo" column="extra_info" javaType="String" jdbcType="VARCHAR" />
+        <result property="userMemo" column="user_memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+        <result property="useFlag" column="use_fg" />
+
+        <collection property="accountVo" column="user_id" javaType="AccountVo" select="com.example.study
+.mapper.AccountMapper.selectOne" />
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND cad.use_fg = #{useFlag}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND cad.user_id = #{userId}
+            </if>
+            <if test="cardKind != null and cardKind != ''">
+                AND cad.card_kind = #{cardKind}
+            </if>
+            <if test="cardNumber != null and cardNumber != ''">
+                AND cad.card_no like concat('%', #{cardNumber}, '%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND usr.user_name like concat('%', #{userName}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="UserCardVo" resultType="UserCardVo" >
+        SELECT card_id as cardId
+               , user_id as userId
+               , usr.user_name as userName
+               , card_kind as cardKind
+               , card_no as cardNumber
+               , card_company as cardCompany
+          FROM tb_user_card cad
+          JOIN tb_user usr ON usr.user_id = cad.user_id
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="UserCardVo" resultType="int">
+        SELECT count(1)
+          FROM tb_user_card cad
+          JOIN tb_user usr ON usr.user_id = cad.user_id
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="UserCardMap" >
+        SELECT cad.*, usr.user_name 
+          FROM tb_user_card cad
+          JOIN tb_user usr ON usr.user_id = cad.user_id
+        WHERE cad.card_id = #{cardId}
+    </select>
+
+    <insert id="insert" parameterType="UserCardVo" useGeneratedKeys="true" keyProperty="cardId">
+        INSERT INTO tb_user_card (
+                user_id
+               ,card_kind
+               ,card_no
+               ,card_company
+               ,card_cvc
+               ,card_yymm
+               ,extra_info
+               ,user_memo
+               ,edited_at
+              ) values (
+                #{userId}
+               ,#{cardKind}
+               ,#{cardNumber}
+               ,#{cardCompany}
+               ,#{cardCvc}
+               ,#{cardYymm}
+               ,#{extraInfo}
+               ,#{userMemo}
+               ,now()
+              )
+        <selectKey resultType="int" order="AFTER" keyProperty="cardId">
+            SELECT LAST_INSERT_ID() as cardId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="UserCardVo">
+        UPDATE tb_user_card SET
+              edited_at = now()
+            <if test="cardKind != null and cardKind != ''">
+              ,card_kind = #{cardKind}
+            </if>
+            <if test="cardNumber != null and cardNumber != ''">
+              ,card_no = #{cardNumber}
+            </if>
+            <if test="cardCvc != null and cardCvc != ''">
+              ,card_cvc = #{cardCvc}
+            </if>
+            <if test="cardYymm != null and cardYymm != ''">
+              ,card_yymm = #{cardYymm}
+            </if>
+            <if test="cardCompany != null and cardCompany != ''">
+              ,card_company = #{cardCompany}
+            </if>
+            <if test="extraInfo != null and extraInfo != ''">
+              ,extra_info = #{extraInfo}
+            </if>
+            <if test="userMemo != null">
+              ,user_memo = #{userMemo}
+            </if>
+        WHERE card_id = #{cardId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND cad.use_fg = #{useFlag}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND cad.user_id = #{userId}
+            </if>
+            <if test="cardKind != null and cardKind != ''">
+                AND cad.card_kind = #{cardKind}
+            </if>
+            <if test="cardNumber != null and cardNumber != ''">
+                AND cad.card_no like concat('%', #{cardNumber}, '%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND usr.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( cad.card_no like concat('%', #{schtext}, '%')
+                   or usr.user_name like concat('%', #{schtext}, '%') )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="UserCardMap" >
+    SELECT cad.*
+      FROM (
+           SELECT   cad.*
+                  , usr.user_name
+             FROM tb_user_card cad
+             JOIN tb_user usr ON usr.user_id = cad.user_id
+        <include refid="whereParamMap"/>
+         ORDER BY cad.user_id, card_no
+           ) cad
+        <if test="listCount != null and listCount != ''">
+     LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+          FROM tb_user_card cad
+          JOIN tb_user usr ON usr.user_id = cad.user_id
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_user_card SET
+              use_fg = 'N'
+        WHERE card_id = #{cardId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+          FROM tb_user_card
+        WHERE card_id = #{cardId}
+    </delete>
+
+</mapper>

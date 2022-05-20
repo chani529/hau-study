@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.SurveyMapper">
+
+    <resultMap id="SurveyMap" type="SurveyVo">
+        <result property="surveyId" column="survey_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="surveyTitle" column="survey_title" javaType="String" jdbcType="VARCHAR"/>
+        <result property="useFg" column="use_fg" javaType="String" jdbcType="VARCHAR"/>
+        <result property="surveyType" column="survey_type" javaType="String" jdbcType="VARCHAR"/>
+        <result property="surveyStatus" column="survey_status" javaType="String" jdbcType="VARCHAR"/>
+        <result property="surveyTypeVal" column="survey_type_val" javaType="String" jdbcType="VARCHAR"/>
+        <result property="surveyStatusVal" column="survey_status_val" javaType="String" jdbcType="VARCHAR"/>
+        <result property="surveyMemo" column="survey_memo" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedBy" column="edited_by" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE"/>
+        <collection property="items" column="{surveyId=survey_id}" javaType="java.util.List" select="com.example.study
+.mapper.SurveyItemMapper.queryListBySurvey" />
+    </resultMap>
+
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="surveyId != null and surveyId != ''">
+                AND srv.survey_id = #{surveyId}
+            </if>
+            <if test="surveyType != null and surveyType != ''">
+                AND srv.survey_type = #{surveyType}
+            </if>
+            <if test="surveyStatus != null and surveyStatus != ''">
+                AND srv.survey_status = #{surveyStatus}
+            </if>
+            <if test="userFg != null and userFg != ''">
+                AND srv.use_fg = #{userFg}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="SurveyVo" resultType="SurveyVo" >
+        SELECT	survey_id as surveyId
+                , survey_title as surveyTitle
+                , use_fg as useFg
+                , survey_type as surveyType
+                , survey_status as surveyStatus
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'SURVEY_TYPE' AND code.code = srv.question_type) as surveyTypeVal
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'SURVEY_STATUS' AND code.code = srv.question_type) as surveyStatusVal
+                , survey_memo as surveyMemo
+                , edited_by as editedBy
+                , edited_ip as editedIp
+                , edited_at as editedAt
+        FROM tb_survey srv
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="SurveyVo" resultType="int">
+        SELECT count(1)
+        FROM tb_survey srv
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="SurveyMap" >
+        SELECT srv.*
+        FROM tb_survey srv
+        WHERE srv.survey_id = #{surveyId}
+    </select>
+
+    <insert id="insert" parameterType="SurveyVo" useGeneratedKeys="true" keyProperty="surveyId">
+        INSERT INTO tb_survey (
+            survey_title
+            , survey_type
+            , survey_status
+            , survey_memo
+            , edited_by
+            , edited_ip
+            , edited_at
+        ) values (
+            #{surveyTitle}
+            , #{surveyType}
+            , #{surveyStatus}
+            , #{surveyMemo}
+            , #{editedBy}
+            , #{editedIp}
+            , now()
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="surveyId">
+            SELECT LAST_INSERT_ID() as surveyId
+        </selectKey>
+    </insert>  
+
+    <update id="update" parameterType="SurveyVo">
+         UPDATE tb_survey SET
+           edited_at = now()
+        <if test="surveyTitle != null and surveyTitle != ''">
+            ,survey_title = #{surveyTitle}
+        </if>
+        <if test="surveyType != null and surveyType != ''">
+            ,survey_type = #{surveyType}
+        </if>
+        <if test="surveyStatus != null and surveyStatus != ''">
+            ,survey_status = #{surveyStatus}
+        </if>
+        <if test="useFg != null and useFg != ''">
+            ,use_fg = #{useFg}
+        </if>
+        <if test="surveyMemo != null and usesurveyMemog != ''">
+            ,survey_memo = #{surveyMemo}
+        </if>
+        <if test="editedIp != null and editedIp != ''">
+            ,edited_ip = #{editedIp}
+        </if>
+        <if test="editedBy != null and editedBy != ''">
+            ,edited_by = #{editedBy}
+        </if>
+        WHERE survey_id = #{surveyId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFg != null and useFg != ''">
+                AND srv.use_fg = #{useFg}
+            </if>
+            <if test="surveyType != null and surveyType != ''">
+                AND srv.survey_type = #{surveyType}
+            </if>
+            <if test="surveyStatus != null and surveyStatus != ''">
+                AND srv.survey_status = #{surveyStatus}
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( srv.survey_title like concat('%', #{schtext}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="SurveyMap" >
+        SELECT 
+                survey_id
+                , survey_title
+                , use_fg
+                , survey_type 
+                , survey_status 
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'SURVEY_TYPE' AND code.code = srv.survey_type) as survey_type_val
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'SURVEY_STATUS' AND code.code = srv.survey_status) as survey_status_val
+                , survey_memo
+                , edited_by
+                , edited_ip
+                , edited_at
+            FROM tb_survey srv
+        <include refid="whereParamMap"/>
+        ORDER BY srv.survey_id DESC
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+         FROM tb_survey srv
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_survey 
+           SET use_fg = 'N'
+        WHERE survey_id = #{surveyId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+        FROM tb_survey
+        WHERE survey_id = #{surveyId}
+    </delete>
+
+</mapper>

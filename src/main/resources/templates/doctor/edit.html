@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+	<!-- start page title -->
+	<div class="row align-items-center">
+		<div class="col-sm-6">
+			<div class="page-title-box">
+				<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+				<ol class="breadcrumb mb-0">
+					<li class="breadcrumb-item"><a href="/">home</a></li>
+					<li class="breadcrumb-item"><a href="/user">의사 관리</a></li>
+					<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+				</ol>
+			</div>
+		</div>
+
+		<div class="col-sm-6">
+		</div>
+	</div>
+	<!-- end page title -->
+
+	<th:block th:if="${submitType != 'update'}">
+		<div class="row">
+			<div class="col-12">
+				<div class="card">
+					
+					<div class="card-body">
+
+						<div class="form-group row">
+							<label for="schtxt" class="col-md-2 col-sm-3 col-form-label">검색</label>
+							<div class="col-md-7 col-sm-5">
+								<input id="schtxt" class="form-control" type="text" placeholder="이름, 계정, 전화번호" />
+							</div>
+							<div class="col-md-3 col-sm-4 text-right">
+								<button type="button" onclick="evSearch();" class="btn btn-info">검색</button>
+							</div>
+						</div>
+						<table id="mainGrid" class="table table-striped table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+							<thead>
+								<tr>
+									<th>순번</th>
+									<th>병원명</th>
+									<th>진료과목</th>
+									<th>진료가능여부</th>
+									<th>지역</th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</th:block>
+	
+	<div class="row">
+		<div class="col-12">
+			<div class="card">
+				<form id="registForm" name="registForm">
+					<div class="card-body">
+
+						<div class="form-group row">
+							<label for="hospitalName" class="col-sm-2 col-form-label">병원명</label>
+							<div class="col-sm-4">
+								<input id="hospitalId" name="hospitalId" type="hidden" />
+								<input id="hospitalName" name="hospitalName" required readonly class="form-control" type="text" />
+							</div>
+
+							<label for="address1" class="col-sm-2 col-form-label">지역</label>
+							<div class="col-sm-4">
+								<input id="address1" name="address1" required readonly class="form-control" type="text" />
+							</div>
+						</div>
+
+						<th:block th:if="${submitType == 'update'}">
+							<div class="form-group row">
+								<label for="account" class="col-sm-2 col-form-label">계정</label>
+								<div class="col-sm-4">
+									<input id="account" name="account" class="form-control" type="text" readonly />
+								</div>
+								
+							</div>
+						</th:block>
+
+						<th:block th:if="${submitType != 'update'}">
+							<div class="form-group row">
+								<label for="account" class="col-sm-2 col-form-label">계정</label>
+								<div class="col-sm-4">
+									<input id="account" name="account" minlength="5" maxlength="12" required class="form-control" type="text" placeholder="계정" />
+								</div>
+
+								<label for="passwd1" class="col-sm-2 col-form-label">비밀번호</label>
+								<div class="col-sm-4">
+									<input id="password" name="password"  minlength="6" maxlength="12" required class="form-control" type="password" />
+								</div>
+							</div>
+
+						</th:block>
+
+						<div class="form-group row">
+							<label for="doctorName" class="col-sm-2 col-form-label">의사명</label>
+							<div class="col-sm-4">
+								<input id="doctorName" name="doctorName"  minlength="2" maxlength="12" required class="form-control" type="text" placeholder="의사명" />
+							</div>
+
+							<label for="signKind" class="col-sm-2 col-form-label">가입방식</label>
+							<div class="col-sm-4">
+								<select class="form-control" th:name="signKind" th:id="signKind">
+									<option th:each="val : ${signKind}"
+											th:value="${val?.code}"
+											th:utext="${val?.codeTitle}"></option>
+								</select>
+							</div>
+						</div>
+						
+
+						<div class="form-group row">
+							<label for="phone" class="col-sm-2 col-form-label">전화번호</label>
+							<div class="col-sm-4">
+								<input id="phone" name="phone" required minlength="10" maxlength="11" class="form-control" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" placeholder="전화번호" />
+							</div>
+
+							<label for="email" class="col-sm-2 col-form-label">이메일</label>
+							<div class="col-sm-4">
+								<input id="email" name="email" required class="form-control" type="email" placeholder="hello@world.com" />
+							</div>
+						</div>
+
+						<div class="form-group row">
+							<label for="treatStatus" class="col-sm-2 col-form-label">진료가능여부</label>
+							<div class="col-sm-4">
+								<select class="form-control" th:name="treatStatus" th:id="treatStatus">
+									<option th:each="val : ${treatStatus}"
+											th:value="${val?.code}"
+											th:utext="${val?.codeTitle}"></option>
+								</select>
+							</div>
+						</div>
+
+						<div class="form-group row" style="height: 300px;">
+							<label for="subjects" class="col-sm-2 col-form-label">진료과목</label>
+							<div class="col-sm-4">
+								<input type="hidden" id="subject" name="subject">
+								<select style="height: 300px;" required class="form-control" th:name="subjects" th:id="subjects" multiple>
+									<option th:each="val : ${subjects}"
+											th:value="${val?.code}"
+											th:utext="${val?.codeTitle}"></option>
+								</select>
+							</div>
+						</div>
+
+
+						<div class="form-group row">
+							<label for="times" class="col-sm-2 col-form-label">진료 시간</label>
+							
+							<label for="description" class="col-sm-1 col-form-label">월</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="mon1" name="mon" type="time" value="09:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="mon2" name="mon" type="time" value="18:00" >
+							</div>
+							<label for="description" class="col-sm-1 col-form-label">화</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="tue1" name="tue" type="time" value="09:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="tue2" name="tue" type="time" value="18:00" >
+							</div>
+						</div>
+
+						<div class="form-group row">
+							<label for="times" class="col-sm-2 col-form-label"></label>
+							
+							<label for="description" class="col-sm-1 col-form-label">수</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="wed1" name="wed" type="time" value="09:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="wed2" name="wed" type="time" value="18:00" >
+							</div>
+							<label for="description" class="col-sm-1 col-form-label">목</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="thu1" name="thu" type="time" value="09:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="thu2" name="thu" type="time" value="18:00" >
+							</div>
+						</div>
+
+						<div class="form-group row">
+							<label for="times" class="col-sm-2 col-form-label"></label>
+							
+							<label for="description" class="col-sm-1 col-form-label">금</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="fri1" name="fri" type="time" value="09:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="fri2" name="fri" type="time" value="18:00" >
+							</div>
+							<label for="description" class="col-sm-1 col-form-label">토</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="sat1" name="sat" type="time" value="09:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="sat2" name="sat" type="time" value="18:00" >
+							</div>
+						</div>
+
+						<div class="form-group row">
+							<label for="times" class="col-sm-2 col-form-label"></label>
+							<label for="description" class="col-sm-1 col-form-label">일</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="sun1" name="sun" type="time" value="" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="sun2" name="sun" type="time" value="" >
+							</div>
+							<label for="description" class="col-sm-1 col-form-label">점심시간</label>
+							<div class="col-sm-2">
+								<input class="form-control" id="lunch1" name="lunch" type="time" value="12:00" >
+							</div>
+							<div class="col-sm-2">
+								<input class="form-control" id="lunch2" name="lunch" type="time" value="13:00" >
+							</div>
+						</div>
+
+
+						<div class="form-group row">
+							<label for="license" class="col-sm-2 col-form-label">의사면허번호</label>
+							<div class="col-sm-4">
+								<input id="license" name="license" required minlength="13" maxlength="13"  class="form-control" type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" placeholder="의사면허번호" />
+							</div>
+
+							<label for="gender" class="col-sm-2 col-form-label">성별</label>
+							<div class="col-sm-4">
+								<select class="form-control" th:name="gender" th:id="gender">
+									<option th:each="val : ${gender}"
+											th:value="${val?.code}"
+											th:utext="${val?.codeTitle}"></option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="imgfile" class="col-sm-2 col-form-label">사진</label>
+							<div class="col-sm-4">
+								<input id="imgfile" name="imgfile" class="form-control" type="file" onchange="baseConvert();"/>
+								<div id="imgArea" style="padding: 8px 0px;"></div>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label for="memo" class="col-sm-2 col-form-label">메모</label>
+							<div class="col-sm-10"><textarea id="memo" name="memo" class="form-control"></textarea></div>
+						</div>
+
+						<div class="form-group row">
+							<div class="col-sm-12 text-right">
+								<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+								<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+							<th:block th:if="${submitType == 'update'}">
+								<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+							</th:block>
+
+							</div>
+						</div>
+
+					</div>
+				</form>
+			</div>
+		</div> <!-- end col -->
+	</div> <!-- end row -->
+
+	<input id="fileRealName" name="fileRealName" class="form-control" type="hidden" />
+	<input id="base64String" name="base64String" class="form-control" type="hidden" />
+
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+<!-- Required datatable js -->
+<!-- <script th:src="@{/libs/datatables.net/js/jquery.dataTables.min.js}"></script> -->
+<script th:src="@{/js/jquery.dataTables.kr.js}"></script>
+<script th:src="@{/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js}"></script>
+<!-- Buttons examples -->
+<script th:src="@{/libs/datatables.net-buttons/js/dataTables.buttons.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js}"></script>
+<script th:src="@{/libs/jszip/jszip.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/pdfmake.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/vfs_fonts.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.html5.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.print.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.colVis.min.js}"></script>
+<!-- Responsive examples -->
+<script th:src="@{/libs/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js}"></script>
+
+<script>
+var submitType = "[[${submitType}]]";
+var doctorId = parseInt("[[${doctorId}]]");
+
+jQuery(document).ready(function() {
+	if(submitType == "update") {
+		getInfo();
+	}
+});
+
+function getInfo() {
+	jQuery.ajax({
+		url: "/api/doctor/"+doctorId+"/app",
+		success: function(response) {
+			console.log(response);
+			if(response.status =='success') {
+				$("#account").val(response.result.data.accountVo.account);
+				$("#doctorName").val(response.result.data.doctorName);
+				$("#signKind").val(response.result.data.signKind);
+				$("#phone").val(response.result.data.phone);
+				$("#email").val(response.result.data.email);
+				$("#memo").val(response.result.data.memo);
+				$("#gender").val(response.result.data.gender);
+				$("#license").val(response.result.data.license);
+				$("#hospitalId").val(response.result.data.hospitalId);
+				$("#hospitalName").val(response.result.data.hospital.hospitalName);
+				$("#address1").val(response.result.data.hospital.address1);		
+				$("#treatStatus").val(response.result.data.treatStatus);
+
+				$("#subject").val(response.result.data.subject);
+				var subjects = response.result.data.subject.split(",");
+				$("#subjects").val(subjects);
+
+				var times = JSON.parse(response.result.data.times);
+				$.each(times , function(index, time){
+					$("#"+time.day + "1").val(time.start);
+					$("#"+time.day + "2").val(time.end);
+				});
+				
+				if(response.result.data.fileVo) {
+					$("#imgArea").html("<img src='"+response.result.data.fileVo.filePath + response.result.data.fileVo.fileSaveName +"' style='max-width:100%' />");
+					$("#imgArea").show();
+				}
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+function evSave() {
+	var saveURL = "/api/doctor";
+	var saveMethod = "POST";
+	// var userInfo = {};
+	var userInfo = new FormData();
+
+	if(submitType == "update") {
+		saveMethod = "PUT";
+		saveURL += "/" + doctorId;
+		// userInfo.userId = userId;
+	} 
+
+	var valid = fromValidateCheck("#registForm");
+	if(valid){
+		$("#subject").val($("#subjects").val());
+
+		var form = $("#registForm").serializeObject();
+		var file = new Object() ;
+		file.base64String = $("#base64String").val();
+		file.fileRealName = $("#fileRealName").val();
+		form.fileVo = file;
+		
+		var account = new Object() ;
+		account.account = $("#account").val();
+		account.password = $("#password").val();
+		form.accountVo = account;
+
+		var timeinfo = new Array()
+		var weeks = ['mon','tue','wed','thu','fri','sat','sun','lunch'];
+		$.each(weeks , function(index , week){
+			var day = new Object();
+			day.day = week;
+			day.start = $("#"+week+"1").val();
+			day.end = $("#"+week+"2").val();
+			timeinfo.push(day);
+		});
+		form.times = JSON.stringify(timeinfo);
+
+		
+		var formString = JSON.stringify(form);
+		jQuery.ajax({
+			url: saveURL,
+			method: saveMethod,
+			data: formString,
+			dataType: "json",
+			contentType: "application/json",
+			success: function(response) {
+				console.log(response);
+				if(response.status == "success"){
+					alert("저장하였습니다.");
+					if(submitType == "update") {
+						getInfo();
+					} else {
+						location.href = "/admin/doctor";
+					}
+				} else {
+					alert(response.message);
+				}
+			},
+			error:function(request,status,err){
+				console.log(err);
+			}
+		});
+	}
+}
+
+function evList() {
+	location.href = "/admin/doctor";
+}
+
+
+function baseConvert(){
+	var file = $('#imgfile')[0].files[0];
+	var reader = new FileReader();
+	reader.onload = function(){
+		var result = reader.result;
+		$("#base64String").val(result.split(",")[1]);
+		$("#fileRealName").val($('#imgfile').val());
+		$("#imgArea").html("<img src='"+ result +"' style='max-width:100%' />");
+		$("#imgArea").show();
+	}
+	reader.readAsDataURL(file);
+	reader.onerror = function (error) {
+		console.log('Error');
+	};
+}	
+
+
+function evDelete() {
+	jQuery.ajax({
+		url: "/api/doctor/"+doctorId,
+		method: "DELETE",
+		success: function(response) {
+			if(response.status == 'success') {
+				alert("삭제하였습니다.");
+				location.href = "/admin/doctor";
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,err) {
+			console.log(err);
+		}
+	});
+}
+
+var mainTable = null;
+function evSearch() {
+	var schtxt = $("#schtxt").val();
+	if(schtxt == ''){
+		alert("검색어를 입력하여 주세요.");
+		$("#schtxt").focus();
+		return false;
+	}
+
+	jQuery.ajax({
+		url: "/api/hospital?schtext="+ schtxt,
+		dataType: "json",
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				mainTable = $('#mainGrid').DataTable({
+				data : response.result.data,
+				columns: [
+					{"data":"rowSeq"},
+					{"data":"hospitalName"},
+					{"data":"subject"},
+					{"data":"treatStatus"},
+					{"data":"address1"},
+				],
+				destroy : true,
+				// lengthChange: false,
+				//buttons: ['copy', 'excel', 'pdf']
+				});
+			
+
+				$('#mainGrid tbody').on('click', 'tr', function () {
+					var rowData = mainTable.row( $(this) ).data();
+					$("#hospitalId").val(rowData.hospitalId);
+					$("#hospitalName").val(rowData.hospitalName);
+					$("#address1").val(rowData.address1);
+				});
+
+			}
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+
+}
+
+</script>
+
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

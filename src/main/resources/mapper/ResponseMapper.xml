@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.ResponseMapper">
+    <!--
+    <resultMap id="ResponseMap" type="ResponseVo">
+        <result property="responseId" column="response_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="responseTitle" column="response_title" javaType="String" jdbcType="VARCHAR"/>
+        <result property="useFg" column="use_fg" javaType="String" jdbcType="VARCHAR"/>
+        <result property="responseType" column="response_type" javaType="String" jdbcType="VARCHAR"/>
+        <result property="responseStatus" column="response_status" javaType="String" jdbcType="VARCHAR"/>
+        <result property="responseTypeVal" column="response_type_val" javaType="String" jdbcType="VARCHAR"/>
+        <result property="responseStatusVal" column="response_status_val" javaType="String" jdbcType="VARCHAR"/>
+        <result property="responseMemo" column="response_memo" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedBy" column="edited_by" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE"/>
+        <collection property="items" column="{responseId=response_id}" javaType="java.util.List" select="com.example.study.mapper.ResponseItemMapper.queryListByResponse" />
+    </resultMap>
+    -->
+
+
+    <resultMap id="ResponseMap" type="ResponseVo">
+        <result property="responseId" column="response_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="surveyId" column="survey_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="editedBy" column="edited_by" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE"/>
+        <collection property="items" column="{responseId=response_id}" javaType="java.util.List" select="com.example.study
+.mapper.ResponseItemMapper.queryListByResponse" />
+    </resultMap>
+
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="responseId != null and responseId != ''">
+                AND rsps.response_id = #{responseId}
+            </if>
+            <if test="surveyId != null and surveyId != ''">
+                AND rsps.survey_id = #{surveyId}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND rsps.user_id = #{userId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="ResponseVo" resultType="ResponseVo" >
+        SELECT	response_id as responseId
+                , survey_id as serveyId
+                , user_id as userId
+                , edited_by as editedBy
+                , edited_ip as editedIp
+                , edited_at as editedAt
+        FROM tb_survey_response rsps
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="ResponseVo" resultType="int">
+        SELECT count(1)
+        FROM tb_survey_response rsps
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="ResponseMap" >
+        SELECT rsps.*
+        FROM tb_survey_response rsps
+        WHERE rsps.response_id = #{responseId}
+    </select>
+
+    <insert id="insert" parameterType="ResponseVo" useGeneratedKeys="true" keyProperty="responseId">
+        INSERT INTO tb_survey_response (
+            survey_id
+            , user_id
+            , edited_by
+            , edited_ip
+            , edited_at
+        ) values (
+            #{surveyId}
+            , #{userId}
+            , #{editedBy}
+            , #{editedIp}
+            , now()
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="responseId">
+            SELECT LAST_INSERT_ID() as responseId
+        </selectKey>
+    </insert>  
+
+    <update id="update" parameterType="ResponseVo">
+         UPDATE tb_survey_response SET
+           edited_at = now()
+        <if test="surveyId != null and surveyId != ''">
+            , survey_id = #{surveyId}
+        </if>
+        <if test="userId != null and userId != ''">
+            , user_id = #{userId}
+        </if>
+        <if test="editedBy != null and editedBy != ''">
+            , edited_by = #{editedBy}
+        </if>
+        <if test="editedIp != null and editedIp != ''">
+            , edited_ip = #{editedIp}
+        </if>
+        WHERE response_id = #{responseId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="surveyId != null and surveyId != ''">
+                AND rsps.survey_id = #{surveyId}
+            </if>
+            <if test="responseId != null and responseId != ''">
+                AND response_id = #{responseId}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND user_id = #{userId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="ResponseMap" >
+        SELECT 
+                response_id
+                , survey_id
+                , user_id
+                , edited_by
+                , edited_ip
+                , edited_at
+            FROM tb_survey_response rsps
+        <include refid="whereParamMap"/>
+        ORDER BY rsps.response_id DESC
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+         FROM tb_survey_response rsps
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_survey_response 
+           SET use_fg = 'N'
+        WHERE response_id = #{responseId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+        FROM tb_survey_response
+        WHERE response_id = #{responseId}
+    </delete>
+
+</mapper>

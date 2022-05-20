@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.FileMapper">
+
+    <resultMap id="FileMap" type="FileVo">
+        <result property="fileId" column="file_id" javaType="int" jdbcType="INTEGER" />
+        <result property="linkTable" column="link_table" javaType="String" jdbcType="VARCHAR" />
+        <result property="linkField" column="link_field" javaType="String" jdbcType="VARCHAR" />
+        <result property="linkKey" column="link_key" javaType="int" jdbcType="INTEGER"/>
+        <result property="fileSaveName" column="file_save_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="fileRealName" column="file_real_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="filePath" column="file_path" javaType="String" jdbcType="VARCHAR" />
+        <result property="fileSize" column="file_size" />
+        <result property="useFg" column="use_fg" javaType="String" jdbcType="VARCHAR"/>
+        <result property="savedAt" column="saved_at" javaType="java.time.Instant" jdbcType="DATE" />
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND file.use_fg = #{useFlag}
+            </if>
+            <if test="linkTable != null and linkTable != ''">
+                AND file.link_table = #{linkTable}
+            </if>
+            <if test="linkField != null and linkField != ''">
+                AND file.link_field = #{linkField}
+            </if>
+            <if test="linkKey != null and linkKey != ''">
+                AND file.link_key = #{linkKey}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="FileVo" resultType="FileVo" >
+        SELECT	file_id as fileId,
+                link_table as linkTable,
+                link_field as linkField,
+                link_key as linkKey,
+                file_save_name as fileSaveName,
+                file_real_name as fileRealName,
+                file_path as filePath,
+                file_size as fileSize,
+                use_fg as useFg,
+                saved_at as savedAt
+      FROM tb_file file
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="FileVo" resultType="int">
+        SELECT count(1)
+        FROM tb_file file
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="FileMap" >
+        SELECT 
+        SELECT	file_id as fileId,
+                link_table as linkTable,
+                link_field as linkField,
+                link_key as linkKey,
+                file_save_name as fileSaveName,
+                file_real_name as fileRealName,
+                file_path as filePath,
+                file_size as fileSize,
+                use_fg as useFg,
+                saved_at as savedAt
+        FROM tb_file file
+        WHERE file.file_id = #{fileId}
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_file SET
+           use_fg = 'N'
+     WHERE file_id = #{fileId}
+    </update>
+
+    <update id="deleteFlagByFileInfo" parameterType="FileVo">
+    UPDATE tb_file SET
+           use_fg = 'N'
+    WHERE 1=1
+    <if test="linkTable != null and linkTable != ''">
+        AND link_table = #{linkTable}
+    </if>
+    <if test="linkField != null and linkField != ''">
+        AND link_field = #{linkField}
+    </if>
+    <if test="linkKey != null and linkKey != ''">
+        AND link_key = #{linkKey}
+    </if>
+    </update>
+</mapper>

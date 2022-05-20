@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.TreatMapper">
+
+    <resultMap id="TreatMap" type="TreatVo">
+        <result property="treatId" column="treat_id" javaType="int" jdbcType="INTEGER"/>    
+        <result property="reserveId" column="reserve_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="hospitalId" column="hospital_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="doctorId" column="doctor_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="payment" column="payment" javaType="int" jdbcType="INTEGER" />
+        <result property="treatMemo" column="treat_memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="treatStatus" column="treat_status" javaType="String" jdbcType="VARCHAR" />
+        <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="doctorName" column="doctor_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="hospitalName" column="hospital_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="reviewStatus" column="review_status" javaType="String" jdbcType="VARCHAR"/>
+        <result property="reviewId" column="review_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="useFlag" column="use_fg" />
+        <result property="addedBy" column="added_by" javaType="int" jdbcType="INTEGER"/>
+        <result property="addedAt" column="added_at" javaType="java.time.Instant" jdbcType="DATE" />
+
+        <!--
+        <collection property="hospital" column="{hospitalId=hospital_id}" javaType="HospitalVo" select="com.example.study
+.mapper.HospitalMapper.selectList" />
+        <collection property="doctor" column="{doctorId=doctor_id}" javaType="doctorVo" select="com.example.study
+.mapper.DoctorMapper.selectList" />
+        <collection property="user" column="{userId=user_id}" javaType="userVo" select="com.example.study
+.mapper.UserMapper.selectList" />
+        -->
+
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="treatId != null and treatId != ''">
+                AND trt.treat_id = #{treatId}
+            </if>
+            <if test="reserveId != null and reserveId != ''">
+                AND trt.reserve_id = #{reserveId}
+            </if>
+            <if test="hospitalId != null and hospitalId != ''">
+                AND trt.hospital_id = #{hospitalId}
+            </if>
+            <if test="doctorId != null and doctorId != ''">
+                AND trt.doctor_id = #{doctorId}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND trt.user_id = #{userId}
+            </if>
+            <if test="reviewStatus != null and reviewStatus != ''">
+                AND trt.review_status = #{reviewStatus}
+                </if>
+            <if test="useFlag != null and useFlag != ''">
+                AND trt.use_fg = #{useFlag}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="TreatVo" resultType="TreatVo" >
+        SELECT trt.* , trv.review_status as reviewStatus , trv.review_id as reviewId
+          FROM (
+            SELECT	treat_id as treatId,
+                    reserve_id as reserveId,
+                    hospital_id as hospitalId,
+                    doctor_id as doctorId,
+                    user_id as userId,
+                    payment as payment,
+                    treat_memo as treatMemo,
+                    treat_status as treatStatus,
+                    use_fg as useFg,
+                    added_by as addedBy,
+                    added_at as addedAt,
+            FROM tb_treat trt
+                , tb_doctor doc
+                , tb_hospital hspt
+                , tb_user usr
+                , tb_reservation res
+            WHERE trt.doctor_id = doc.doctor_id
+                AND trt.hospital_id = hspt.hospital_id
+                AND trt.user_id = usr.user_id  
+                AND trt.reserve_id = res.reserve_id  
+            <include refid="whereParamVo"/>
+          ) trt
+           LEFT OUTER JOIN tb_review trv
+           ON trt.treat_id = trv.treat_id
+    </select>
+
+    <select id="count" parameterType="TreatVo" resultType="int">
+        SELECT count(1)
+        FROM tb_treat trt
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="TreatMap" >
+        SELECT trt.* , trv.reivew_status , trv.review_id
+          FRPM (
+            SELECT 
+                    trt.treat_id
+                    , trt.reserve_id
+                    , trt.hospital_id
+                    , trt.doctor_id
+                    , trt.user_id
+                    , trt.payment
+                    , trt.treat_memo
+                    , trt.use_fg
+                    , trt.added_by
+                    , trt.added_at
+                FROM tb_treat trt
+                    , tb_doctor doc
+                    , tb_hospital hspt
+                    , tb_user usr
+                    , tb_reservation res
+                WHERE trt.doctor_id = doc.doctor_id
+                AND trt.hospital_id = hspt.hospital_id
+                AND trt.user_id = usr.user_id  
+                AND trt.reserve_id = res.reserve_id  
+                AND trt.treat_id = #{treatId}
+        ) trt
+           LEFT OUTER JOIN tb_review trv
+           ON trt.treat_id = trv.treat_id
+    </select>
+
+    <insert id="insert" parameterType="TreatVo" useGeneratedKeys="true" keyProperty="treatId">
+        INSERT INTO tb_treat(
+                    treat_id
+                    , reserve_id
+                    , hospital_id
+                    , doctor_id
+                    , user_id
+                    , payment
+                    , treat_memo
+                    , use_fg
+                    , added_by
+                    , added_at
+        )  VALUES( 
+                    #{treatId}
+                    ,  #{reserveId}
+                    ,  #{hospitalId}
+                    ,  #{doctorId}
+                    ,  #{userId}
+                    ,  #{payment}
+                    ,  #{treatMemo}
+                    ,  #{useFlag}
+                    ,  #{addedBy}
+                    ,  now()
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="treatId">
+            SELECT LAST_INSERT_ID() as treatId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="TreatVo">
+        UPDATE tb_treat SET
+            added_at = now()
+            <if test="reserveId != null and reserveId != ''">
+                , reserve_id = #{reserveId}
+            </if>
+            <if test="hospitalId != null and hospitalId != ''">
+                , hospital_id = #{hospitalId}
+            </if>
+            <if test="doctorId != null and doctorId != ''">
+                , doctor_id = #{doctorId}
+            </if>
+            <if test="userId != null and userId != ''">
+                , user_id = #{userId}
+            </if>
+            <if test="payment != null and payment != ''">
+                , payment = #{payment}
+            </if>
+            <if test="treatStatus != null and treatStatus != ''">
+                , treat_status = #{treatStatus}
+            </if>
+            <if test="treatMemo != null and treatMemo != ''">
+                , treat_memo = #{treatMemo}
+            </if>
+            <if test="useFlag != null and useFlag != ''">
+                , use_fg = #{useFlag}
+            </if>
+            <if test="addedBy != null and addedBy != ''">
+                , added_by = #{addedBy}
+            </if>
+        WHERE treat_id = #{treatId}
+    </update>
+
+    <sql id="whereParamMap">
+        <if test="treatId != null and treatId != ''">
+            AND trt.treat_id = #{treatId}
+        </if>
+        <if test="reserveId != null and reserveId != ''">
+            AND trt.reserve_id = #{reserveId}
+        </if>
+        <if test="hospitalId != null and hospitalId != ''">
+            AND trt.hospital_id = #{hospitalId}
+        </if>
+        <if test="doctorId != null and doctorId != ''">
+            AND trt.doctor_id = #{doctorId}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND trt.user_id = #{userId}
+        </if>
+        <if test="useFlag != null and useFlag != ''">
+            AND trt.use_fg = #{useFlag}
+        </if>
+        <if test="addedBy != null and addedBy != ''">
+            AND trt.added_by = #{addedBy}
+        </if>
+        <if test="reviewStatus != null and reviewStatus != ''">
+            AND trt.review_status = #{reviewStatus}
+        </if>
+        <if test="schtext != null and schtext != ''">
+            AND (
+                hspt.hospital_name like concat('%', #{schtext}, '%')
+                or doc.doctor_name like concat('%', #{schtext}, '%')
+                or usr.user_name like concat('%', #{schtext}, '%')
+            )
+        </if>
+
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="TreatMap" >
+        SELECT res.* , trv.review_status , trv.review_id
+        FROM (
+            SELECT 
+                    trt.treat_id
+                    , trt.reserve_id
+                    , trt.hospital_id
+                    , trt.doctor_id
+                    , trt.user_id
+                    , trt.payment
+                    , trt.treat_memo
+                    , trt.use_fg
+                    , trt.treat_status
+                    , trt.added_by
+                    , trt.added_at
+                    , doc.doctor_name
+                    , hspt.hospital_name
+                    , usr.user_name
+                FROM tb_reservation res
+                    , tb_doctor doc
+                    , tb_hospital hspt
+                    , tb_user usr
+                    , tb_treat trt
+                WHERE trt.doctor_id = doc.doctor_id
+                  AND trt.hospital_id = hspt.hospital_id
+                  AND trt.user_id = usr.user_id  
+                  AND trt.reserve_id = res.reserve_id  
+            <include refid="whereParamMap"/>
+            ORDER BY trt.treat_id DESC, added_at DESC
+        ) res  
+        LEFT OUTER JOIN tb_review trv
+          ON res.treat_id = trv.treat_id
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+        FROM tb_reservation res
+            , tb_doctor doc
+            , tb_hospital hspt
+            , tb_user usr
+            , tb_treat trt
+        WHERE trt.doctor_id = doc.doctor_id
+        AND trt.hospital_id = hspt.hospital_id
+        AND trt.user_id = usr.user_id  
+        AND trt.reserve_id = res.reserve_id  
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_treat SET
+           use_fg = 'N'
+     WHERE treat_id = #{treatId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+    DELETE
+      FROM tb_treat
+     WHERE treat_id = #{treatId}
+    </delete>
+
+</mapper>

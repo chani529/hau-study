@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+	<!-- DataTables -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css}" />
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css}" />
+	<!-- Responsive datatable examples -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css}" />
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+			<!-- start page title -->
+			<div class="row align-items-center">
+				<div class="col-sm-6">
+					<div class="page-title-box">
+						<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+						<ol class="breadcrumb mb-0">
+							<li class="breadcrumb-item"><a href="/">home</a></li>
+							<li class="breadcrumb-item"><a href="/view/userCard">사용자 카드 관리</a></li>
+							<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+						</ol>
+					</div>
+				</div>
+
+				<div class="col-sm-6">
+				</div>
+			</div>
+			<!-- end page title -->
+
+
+			<th:block th:if="${submitType != 'update'}">
+				<div class="row">
+					<div class="col-12">
+						<div class="card">
+							
+							<div class="card-body">
+
+								<div class="form-group row">
+									<label for="schtxt" class="col-md-2 col-sm-3 col-form-label">검색</label>
+									<div class="col-md-7 col-sm-5">
+										<input id="schtxt" class="form-control" type="text" placeholder="이름, 계정, 전화번호" />
+									</div>
+									<div class="col-md-3 col-sm-4 text-right">
+										<button type="button" onclick="evSearch();" class="btn btn-info">검색</button>
+									</div>
+								</div>
+								<table id="mainGrid" class="table table-striped table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<thead>
+									<tr>
+										<th>이름</th>
+										<th>계정</th>
+										<th>전화번호</th>
+										<th>이메일</th>
+										<!--<th>선택</th>-->
+									</tr>
+									</thead>
+									<tbody></tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</th:block>
+
+
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<form id="registForm" name="registForm">
+							<div class="card-body">
+								<th:block th:if="${submitType == 'update'}">
+
+									<div class="form-group row">
+										<label for="userName" class="col-sm-2 col-form-label">사용자</label>
+										<div class="col-sm-4">
+											<div class="form-group row">
+												<div class="col-sm-4">
+													<input id="userId"  name="userId" type="hidden" />
+													<input id="userName" required class="form-control" type="text" placeholder="사용자명" readonly/>
+												</div>
+												<div class="col-sm-4">
+													<input id="account" required class="form-control" type="text" placeholder="계정" readonly/>
+												</div>		
+											</div>
+										</div>
+									</div>
+
+								</th:block>
+								<th:block th:if="${submitType != 'update'}">
+
+									<div class="form-group row">
+										<label for="userName" class="col-sm-2 col-form-label">사용자</label>
+										<div class="col-sm-4">
+											<div class="form-group row">
+												<div class="col-sm-4">
+													<input id="userId"  name="userId" type="hidden" />
+													<input id="userName" required class="form-control" type="text" placeholder="사용자명" readonly/>
+												</div>
+												<div class="col-sm-4">
+													<input id="account" required class="form-control" type="text" placeholder="계정" readonly/>
+												</div>		
+											</div>
+										</div>
+									</div>
+								</th:block>
+								<div class="form-group row">
+									<label for="cardKind" class="col-sm-2 col-form-label">카드종류</label>
+									<div class="col-sm-4">
+										
+										<select class="form-control" th:name="cardKind" th:id="cardKind">
+											<option th:each="val : ${cardKind}"
+													th:value="${val?.code}"
+													th:utext="${val?.codeTitle}"></option>
+										</select>
+
+
+									</div>
+									<label for="cardCompany" class="col-sm-1 col-form-label">카드사</label>
+									<div class="col-sm-4">
+										<select class="form-control" th:name="cardCompany" th:id="cardCompany">
+											<option th:each="val : ${cardCompany}"
+													th:value="${val?.code}"
+													th:utext="${val?.codeTitle}"></option>
+										</select>
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="cardNumber" class="col-sm-2 col-form-label">카드번호</label>
+									<div class="col-sm-1">
+										<input id="cardNumber" name="cardNumber" maxlength="16" minlength="16" required type="hidden" />
+										<input id="card1" class="form-control" maxlength="4" minlength="4" type="text" placeholder="" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"/>
+									</div>
+									<div class="col-sm-1">
+										<input id="card2" class="form-control" maxlength="4" minlength="4" type="text" placeholder="" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"/>
+									</div>
+									<div class="col-sm-1">
+										<input id="card3" class="form-control" maxlength="4" minlength="4" type="text" placeholder="" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"/>
+									</div>
+									<div class="col-sm-1">
+										<input id="card4" class="form-control" maxlength="4" minlength="4" type="text" placeholder="" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"/>
+									</div>
+
+
+									<label for="cardCvc" class="col-sm-1 col-form-label">CVC</label>
+									<div class="col-sm-1">
+										<input id="cardCvc" name="cardCvc" required maxlength="3" minlength="3" class="form-control" type="text" placeholder="CVC" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"/>
+									</div>
+									
+
+									<label for="cardYymm" class="col-sm-1 col-form-label">유효기간</label>
+									<div class="col-sm-1">
+										<input id="cardYymm" name="cardYymm" required maxlength="4" minlength="4" class="form-control" type="text" placeholder="ex>0122" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"/>
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="extraInfo" class="col-sm-2 col-form-label">추가정보</label>
+									<div class="col-sm-10">
+										<input id="extraInfo" name="extraInfo" class="form-control" type="text" placeholder="추가정보" />
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="userMemo" class="col-sm-2 col-form-label">메모</label>
+									<div class="col-sm-10"><textarea id="userMemo" name="userMemo" class="form-control"></textarea></div>
+								</div>
+
+								<div class="form-group row">
+									<div class="col-sm-12 text-right">
+										<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+										<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+									<th:block th:if="${submitType == 'update'}">
+										<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+									</th:block>
+
+									</div>
+								</div>
+
+							</div>
+						</form>
+					</div>
+				</div> <!-- end col -->
+			</div> <!-- end row -->
+			
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+
+
+<!-- Required datatable js -->
+<!-- <script th:src="@{/libs/datatables.net/js/jquery.dataTables.min.js}"></script> -->
+<script th:src="@{/js/jquery.dataTables.kr.js}"></script>
+<script th:src="@{/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js}"></script>
+<!-- Buttons examples -->
+<script th:src="@{/libs/datatables.net-buttons/js/dataTables.buttons.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js}"></script>
+<script th:src="@{/libs/jszip/jszip.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/pdfmake.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/vfs_fonts.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.html5.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.print.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.colVis.min.js}"></script>
+<!-- Responsive examples -->
+<script th:src="@{/libs/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js}"></script>
+
+<script>
+var submitType = "[[${submitType}]]";
+var cardId = parseInt("[[${cardId}]]");
+
+jQuery(document).ready(function() {
+	if(submitType == "update") {
+		getInfo();
+	}
+});
+
+function getInfo() {
+	jQuery.ajax({
+	url: "/api/userCard/"+cardId,
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				$("#userId").val(response.result.data.userId);
+				$("#userName").val(response.result.data.userName);
+				$("#account").val(response.result.data.accountVo.account);
+				$("#cardKind").val(response.result.data.cardKind);
+				$("#cardCompany").val(response.result.data.cardCompany);
+				$("#cardNumber").val(response.result.data.cardNumber);
+
+
+				$("#card1").val(response.result.data.cardNumber.substr(0,4));
+				$("#card2").val(response.result.data.cardNumber.substr(4,4));
+				$("#card3").val(response.result.data.cardNumber.substr(8,4));
+				$("#card4").val(response.result.data.cardNumber.substr(12,4));
+
+				$("#cardCvc").val(response.result.data.cardCvc);
+				$("#cardYymm").val(response.result.data.cardYymm);
+				$("#extraInfo").val(response.result.data.extraInfo);
+				$("#userMemo").val(response.result.data.userMemo);
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+function evSave() {
+	var saveURL = "/api/userCard";
+	var saveMethod = "POST";
+	if(submitType == "update") {
+		saveMethod = "PUT";
+		saveURL += "/" + cardId;
+	} 
+
+	$("#cardNumber").val($("#card1").val() + $("#card2").val() + $("#card3").val() + $("#card4").val());
+	var valid = fromValidateCheck("#registForm");
+	console.log(JSON.stringify($("#registForm").serializeObject()));
+	if(valid){
+		jQuery.ajax({
+			url: saveURL,
+			method: saveMethod,
+			data: JSON.stringify($("#registForm").serializeObject()),
+			dataType: "json",
+			contentType: "application/json;charset=UTF-8",
+			success: function(response) {
+				console.log(response);
+				if(response.status == 'success') {
+					alert("저장하였습니다.");
+					if(submitType == "update") {
+						getInfo();
+					} else {
+						location.href = "/admin/userCard";
+					}
+				} else {
+					alert(response.message);
+				}
+			},
+			error:function(request,status,err){
+				console.log(err);
+			}
+		});
+	}
+}
+
+function evList() {
+	location.href = "/admin/userCard";
+}
+
+function evDelete() {
+	jQuery.ajax({
+		url: "/api/userCard/"+cardId,
+		method: "DELETE",
+		success: function(response) {
+			if(response.status == 'success') {
+				alert("삭제하였습니다.");
+				location.href = "/admin/userCard";
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,err) {
+			console.log(err);
+		}
+	});
+}
+
+function loadData(){
+	var schtext = $("#schtxt").val();
+	jQuery.ajax({
+		url: "/api/user?schtext="+ schtext,
+		dataType: "json",
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				mainTable = $('#mainGrid').DataTable({
+				data : response.result.data,
+				columns: [
+						{"data":"userName"},
+						{"data":"accountVo.account"},
+						{"data":"phone"},
+						{"data":"email"}
+					],
+				destroy : true,
+				lengthChange: false,
+				searching : false
+				});
+
+
+				$('#mainGrid tbody').on('click', 'tr', function () {
+					var rowData = mainTable.row( $(this) ).data();
+					console.log(rowData);
+					$("#userId").val(rowData.userId);
+					$("#userName").val(rowData.userName);
+					$("#account").val(rowData.accountVo.account);
+				});
+
+			}
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+}
+
+
+// 사용자 조회 스크립트
+var mainTable = null;
+function evSearch() {
+	loadData();
+}
+</script>
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

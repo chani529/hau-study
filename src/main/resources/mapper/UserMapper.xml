@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.UserMapper">
+    <resultMap id="UserMap" type="UserVo">
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER" />
+        <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR" />
+        <result property="signKind" column="sign_kind" javaType="String" jdbcType="VARCHAR" />
+        <result property="phone" column="phone" javaType="String" jdbcType="VARCHAR" />
+        <result property="birthday" column="birthday" javaType="String" jdbcType="VARCHAR" />
+        <result property="socialNumber" column="social_no" javaType="String" jdbcType="VARCHAR" />
+        <result property="gender" column="gender" javaType="String" jdbcType="VARCHAR" />
+        <result property="blood" column="blood" javaType="String" jdbcType="VARCHAR" />
+        <result property="email" column="email" javaType="String" jdbcType="VARCHAR" />
+        <result property="memo" column="memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="kakaoKey" column="kakao_key" javaType="String" jdbcType="VARCHAR" />
+        <result property="naverKey" column="naver_key" javaType="String" jdbcType="VARCHAR" />
+        <result property="useFlag" column="use_fg" />
+        <collection property="accountVo" column="user_id" javaType="AccountVo" select="com.example.study.mapper.AccountMapper.selectOne" />
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND usr.use_fg = #{useFlag}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND usr.user_id = #{userId}
+            </if>
+            <if test="userName != null and userName != ''">
+                AND usr.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND usr.phone like concat('%', #{phone}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="UserVo" resultType="UserVo" >
+    SELECT 
+            user_id as userId,
+            sign_kind as signKind,
+            user_name as userName,
+            phone as phone,
+            email as email,
+            birthday as birthday,
+            social_no as socialNo,
+            gender as gender,
+            blood as blood,
+            memo as memo,
+            use_fg as useFlag,
+            edited_by as editedBy,
+            edited_ip as editedIp,
+            edited_at as editedAt,
+            kakao_key as kakaoKey,
+            naver_key as naverKey
+      FROM tb_user usr
+        <include refid="whereParamVo"/>
+      ORDER BY user_id DESC
+    </select>
+
+    <select id="count" parameterType="UserVo" resultType="int">
+        SELECT count(1)
+        FROM tb_user usr
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="UserMap" >
+        SELECT usr.*
+        FROM tb_user usr
+        WHERE usr.user_id = #{userId}
+    </select>
+    
+    <insert id="insert" parameterType="UserVo" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO tb_user (
+            user_id,
+            user_name,
+            sign_kind,
+            phone,
+            email,
+            birthday,
+            social_no,
+            gender,
+            blood,
+            memo,
+            edited_at
+        ) values (
+            #{userId},
+            #{userName},
+            #{signKind},
+            #{phone},
+            #{email},
+            #{birthday},
+            #{socialNumber},
+            #{gender},
+            #{blood},
+            #{memo},
+            now()
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="userId">
+            SELECT LAST_INSERT_ID() as userId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="UserVo">
+        UPDATE tb_user SET
+            edited_at = now()
+            <if test="userName != null and userName != ''">
+                ,user_name = #{userName}
+            </if>
+            <if test="signKind != null and signKind != ''">
+                ,sign_kind = #{signKind}
+            </if>
+            <if test="phone != null and phone != ''">
+                ,phone = #{phone}
+            </if>
+            <if test="birthday != null and birthday != ''">
+                ,birthday = #{birthday}
+            </if>
+            <if test="socialNumber != null and socialNumber != ''">
+                ,social_no = #{socialNumber}
+            </if>
+            <if test="gender != null and gender != ''">
+                ,gender = #{gender}
+            </if>
+            <if test="blood != null and blood != ''">
+                ,blood = #{blood}
+            </if>
+            <if test="email != null and email != ''">
+                ,email = #{email}
+            </if>
+            <if test="memo != null and memo != ''">
+                ,memo = #{memo}
+            </if>
+            <if test="kakaoKey != null and kakaoKey != ''">
+                ,kakao_key = #{kakaoKey}
+            </if>
+            <if test="naverKey != null and naverKey != ''">
+                ,naver_key = #{naverKey}
+            </if>
+        WHERE user_id = #{userId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+              AND usr.use_fg = #{useFlag}
+            </if>
+            <if test="phone != null and phone != ''">
+              AND usr.phone = #{phone}
+            </if>
+            <if test="userName != null and userName != ''">
+                AND usr.user_name like concat('%', #{scUserName}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+              AND usr.phone like concat('%', #{scPhone}, '%')
+            </if>
+
+            <if test="schtext != null and schtext != ''">
+              AND ( usr.user_name like concat('%', #{schtext}, '%')
+                 or usr.phone like concat('%', #{schtext}, '%') )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="UserMap" >
+        SELECT usr.*
+        FROM (
+            SELECT usr.*
+                FROM tb_user usr, ( SELECT @ROWNUM := 0 ) start_row
+            <include refid="whereParamMap"/>
+            ) usr
+            ORDER BY usr.user_id DESC
+            <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+            </if>
+    </select>
+
+    <select id="selectByRefreshToken" parameterType="java.util.Map" resultMap="UserMap" >
+        SELECT * 
+          FROM tb_user
+        WHERE refresh_token = #{refreshToken}
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+        FROM tb_user usr
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_user SET
+            use_fg = 'N'
+        WHERE user_id = #{userId}
+    </update>
+
+
+    <select id="selectByEmail" parameterType="string" resultMap="UserMap" >
+        SELECT usr.*
+        FROM tb_user usr
+        WHERE email = #{email}
+    </select>
+
+    <update id="reset" parameterType="UserVo">
+        UPDATE tb_user SET
+            use_fg = 'Y'
+            <if test="email != null and email != ''">
+            ,email = #{email}
+            </if>
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="passwd" parameterType="UserVo">
+        UPDATE tb_user SET
+            passwd = #{encPassword}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+        FROM tb_user
+        WHERE user_id = #{userId}
+    </delete>
+
+    <update id="updateRefreshToken" parameterType="UserVo">
+        UPDATE tb_user SET
+            edited_at = now()
+            <if test="refreshToken != null and refreshToken != ''">
+            , refresh_token = #{refreshToken}
+            </if>
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

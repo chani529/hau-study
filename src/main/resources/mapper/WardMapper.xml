@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.WardMapper">
+
+    <resultMap id="WardMap" type="WardVo">
+        <result property="wardId" column="ward_id" javaType="int" jdbcType="INTEGER" />
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER" />
+        <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="name" column="name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="phone" column="phone" javaType="String" jdbcType="VARCHAR"/>
+        <result property="socialNo" column="social_no" javaType="String" jdbcType="VARCHAR"/>
+        <result property="familyType" column="family_type" javaType="String" jdbcType="VARCHAR"/>
+        <result property="useFlag" column="use_fg" />
+        <result property="editedBy" column="edited_by" javaType="int" jdbcType="INTEGER"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE"/>
+
+        <collection property="accountVo" column="user_id" javaType="AccountVo" select="com.example.study
+.mapper.AccountMapper.selectOne" />
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND use_fg = #{useFlag}
+            </if>
+            <if test="WardId != null and WardId != ''">
+                AND ward_id = #{wardId}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND user_id = #{userId}
+            </if>
+            <if test="familyType != null and familyType != ''">
+                AND family_type = #{familyType}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="WardVo" resultType="WardVo" >
+        SELECT agc.* 
+              , usr.user_name
+          FROM tb_user usr 
+              , tb_ward agc
+         WHERE usr.user_id = agc.user_id
+            <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="WardVo" resultType="int">
+        SELECT COUNT(1)
+          FROM tb_user usr 
+              , tb_ward agc
+         WHERE usr.user_id = agc.user_id
+            <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="WardMap" >
+        SELECT agc.* 
+              , usr.user_name
+          FROM tb_user usr 
+              , tb_ward agc
+         WHERE usr.user_id = agc.user_id
+           AND agc.ward_id = #{wardId}
+    </select>
+
+    <insert id="insert" parameterType="WardVo" useGeneratedKeys="true" keyProperty="wardId">
+        INSERT INTO tb_ward( 
+            user_id
+            , name
+            , phone
+            , social_no
+            , family_type
+            , edited_by
+            , edited_at
+        ) VALUES( 
+            #{userId}
+            , #{name}
+            , #{phone}
+            , #{socialNo}
+            , #{familyType}
+            , #{editedBy}
+            , now()
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="wardId">
+            SELECT LAST_INSERT_ID() as WardId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="WardVo">
+        UPDATE tb_Ward SET
+           edited_at = now()
+        <if test="familyType != null and familyType != ''">
+          ,family_type = #{familyType}
+        </if>
+        <if test="userId != null and userId != ''">
+          ,user_id = #{userId}
+        </if>
+        <if test="socialNo != null and socialNo != ''">
+          ,social_no = #{socialNo}
+        </if>
+        <if test="name != null and name != ''">
+          ,name = #{name}
+        </if>
+        <if test="phone != null and phone != ''">
+          ,phone = #{phone}
+        </if>
+        <if test="useFlag != null and useFlag != ''">
+          ,use_fg = #{useFlag}
+        </if>
+        <if test="editedBy != null and editedBy != ''">
+          ,edited_by = #{editedBy}
+        </if>
+        WHERE ward_id = #{wardId}
+    </update>
+
+    <sql id="whereParamMap">
+        <if test="useFlag != null and useFlag != ''">
+            AND agc.use_fg = #{useFlag}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND agc.user_id = #{userId}
+        </if>
+        <if test="familyType != null and familyType != ''">
+            AND agc.family_type = #{familyType}
+        </if>
+        <if test="wardId != null and wardId != ''">
+            AND agc.ward_id = ${wardId}
+        </if>
+
+        <if test="schtext != null and schtext != ''">
+            AND ( agc.name like concat('%', #{schtext}, '%')
+                or agc.user_name like concat('%', #{schtext}, '%') )
+        </if>
+
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="WardMap" >
+        SELECT agc.*
+          FROM (
+            SELECT agc.* 
+                  , usr.user_name
+              FROM tb_user usr 
+                  , tb_ward agc
+            WHERE usr.user_id = agc.user_id
+            <include refid="whereParamMap"/>
+            ORDER BY agc.ward_id
+              ) agc
+            <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+            </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT COUNT(1)
+          FROM tb_user usr 
+              , tb_ward agc
+        WHERE usr.user_id = agc.user_id
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_ward SET
+           use_fg = 'N'
+     WHERE Ward_id = #{WardId}
+    </update>
+</mapper>

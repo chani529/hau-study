@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+	<!-- DataTables -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css}" />
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css}" />
+	<!-- Responsive datatable examples -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css}" />
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+			<!-- start page title -->
+			<div class="row align-items-center">
+				<div class="col-sm-6">
+					<div class="page-title-box">
+						<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+						<ol class="breadcrumb mb-0">
+							<li class="breadcrumb-item"><a href="/">home</a></li>
+							<li class="breadcrumb-item"><a href="/view/pharmacist">문항 관리</a></li>
+							<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+						</ol>
+					</div>
+				</div>
+
+				<div class="col-sm-6">
+				</div>
+			</div>
+			<!-- end page title -->
+
+
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<form id="registForm" name="registForm">
+							<div class="card-body">
+								<div class="form-group row">
+									<label for="pharmacistName" class="col-sm-2 col-form-label">유형</label>
+									<div class="col-sm-4">
+										<select class="form-control" th:name="questionType" th:id="questionType">
+											<option th:each="val : ${questionType}"
+													th:value="${val?.code}"
+													th:utext="${val?.codeTitle}"></option>
+										</select>
+
+
+									</div>
+								</div>
+
+								
+								<div class="form-group row">
+									<label for="question" class="col-sm-2 col-form-label">질문</label>
+									<div class="col-sm-10">
+										<input id="question" name="question" required class="form-control" minlength="4" maxlength="50" type="text" placeholder="질문을 입력하세요." />
+										
+									</div>
+								</div>
+			
+
+								<div class="form-group row">
+									<label for="" class="col-sm-2 col-form-label"></label>
+									<label for="answer" class="col-sm-4 col-form-label">항목</label>
+									<label for="factor" class="col-sm-1 col-form-label">가중치</label>								
+									<input id="answers" name="answers" minlength="4"  type="hidden"/>
+								</div>
+
+								<div class="form-group row">
+									<label for="" class="col-sm-2 col-form-label"></label>
+									<div class="col-sm-4">
+										<input id="answer" name="answer" class="form-control" minlength="1" maxlength="50" type="text" placeholder="항목을 입력하세요." />
+									</div>
+									<div class="col-sm-1">
+										<input id="factor" name="factor" class="form-control" minlength="1" maxlength="2" type="text" placeholder=""  value="0"/>
+									</div>
+									<div class="col-sm-2">
+										<button type="button" onclick="addAnswer();" class="btn btn-primary">추가</button>
+									</div>
+								</div>
+
+								<div class="form-group row">
+									<label for="address1" class="col-sm-2 col-form-label"></label>
+									<div class="col-sm-8">
+										<ul id="sortable1" class="connectedSortable">
+										</ul>
+									</div>
+								</div>
+
+
+								
+								<div class="form-group row">
+									<div class="col-sm-12 text-right">
+										<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+										<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+									<th:block th:if="${submitType == 'update'}">
+										<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+									</th:block>
+
+									</div>
+								</div>
+
+							</div>
+						</form>
+					</div>
+				</div> <!-- end col -->
+			</div> <!-- end row -->
+			
+		
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+<style>
+	#sortable1{
+		list-style-type: none;
+		margin: 0;
+		float: left;
+		
+		background: #eee;
+		padding: 5px 5px 5px 5px;
+		width: 100%;
+		padding: 3px 5px 3px 5px;
+	}
+	#sortable1 li{
+		margin: 3px 3px 3px 3px;
+		padding: 3px 5px 3px 5px;
+		width: 100%;
+		border:1px solid blue; 
+		background-color: rgb(239, 239, 196);
+		border-radius: 5px 5px 5px 5px / 5px 5px 5px 5px;
+		cursor: pointer;
+	}
+</style>
+
+<!-- Required datatable js -->
+<!-- <script th:src="@{/libs/datatables.net/js/jquery.dataTables.min.js}"></script> -->
+<script th:src="@{/js/jquery.dataTables.kr.js}"></script>
+<script th:src="@{/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js}"></script>
+<!-- Buttons examples -->
+<script th:src="@{/libs/datatables.net-buttons/js/dataTables.buttons.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js}"></script>
+<script th:src="@{/libs/jszip/jszip.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/pdfmake.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/vfs_fonts.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.html5.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.print.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.colVis.min.js}"></script>
+<!-- Responsive examples -->
+<script th:src="@{/libs/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js}"></script>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+<script>
+var submitType = "[[${submitType}]]";
+var questionId = parseInt("[[${questionId}]]");
+
+jQuery(document).ready(function() {
+	if(submitType == "update") {
+		getInfo();
+	}
+
+	$("#sortable1").sortable({
+		connectWith: ".connectedSortable"
+    }).disableSelection();
+});
+
+function addAnswer(){
+	if($("#answer").val() == ""){
+		alert("항목을 입력하세요.");
+		return false;
+	}
+	if($("#factor").val() == ""){
+		alert("가중치를 입력하세요.");
+		return false;
+	}
+	$("#sortable1").append("<li class='ui-state-highlight'>"+"<i class='mdi mdi-clipboard-list'></i><span style='margin-left : 20px;'>" +$("#answer").val() + ":" + $("#factor").val() + "</span><i style='float:right;' class='mdi mdi-delete' onclick='deleteItem(this);'></i> " +"</li>");
+	$("#answer").val("");
+	$("#factor").val(0);
+}
+
+function deleteItem(obj){
+	if(confirm('항목을 삭제 하시겠습니까?')){
+		$(obj).parent().remove();
+	}
+}
+
+function getInfo() {
+	jQuery.ajax({
+	url: "/api/question/"+questionId,
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				$("#sortable1").html('');
+				$("#question").val(response.result.data.question);
+				$("#questionType").val(response.result.data.questionType);
+
+				var answers = JSON.parse(response.result.data.answers);
+				$.each(answers , function(index, answer){
+					console.log(answer);
+					$("#sortable1").append("<li class='ui-state-highlight'>"+"<i class='mdi mdi-clipboard-list'></i><span style='margin-left : 20px;'>" +answer.label + ":" + answer.factor + "</span><i style='float:right;' class='mdi mdi-delete' onclick='deleteItem(this);'></i> " +"</li>");
+				});
+			}
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+function evSave() {
+	var saveURL = "/api/question";
+	var saveMethod = "POST";
+	if(submitType == "update") {
+		saveMethod = "PUT";
+		saveURL += "/" + questionId;
+	} 
+
+		
+	var answerInfo = new Array()
+	var answerList = $("#sortable1 li");
+
+	if(answerList.length < 2){
+		alert("항목을 두개 이상 추가해주세요.");
+		return false;
+	}
+	$.each(answerList , function(index , answer){
+		var answerData = new Object();
+		answerData.seq = index;
+		answerData.label = $(answer).text().split(":")[0];
+		answerData.factor = parseInt($(answer).text().split(":")[1]);
+		answerInfo.push(answerData);
+	});
+	$("#answers").val(JSON.stringify(answerInfo));
+	var valid = fromValidateCheck("#registForm");	
+	if(valid){
+		console.log(JSON.stringify($("#registForm").serializeObject()));
+		jQuery.ajax({
+			url: saveURL,
+			method: saveMethod,
+			data: JSON.stringify($("#registForm").serializeObject()),
+			dataType: "json",
+			contentType: "application/json;charset=UTF-8",
+			success: function(response) {
+				console.log(response);
+				if(response.status == 'success') {
+					alert("저장하였습니다.");
+					if(submitType == "update") {
+						getInfo();
+					} else {
+						//location.href = "/admin/question";
+					}
+				} else {
+					alert(response.message);
+				}
+			},
+			error:function(request,status,err){
+				console.log(err);
+			}
+		});
+	}
+}
+
+function evList() {
+	location.href = "/admin/question";
+}
+
+function evDelete() {
+	jQuery.ajax({
+		url: "/api/question/"+questionId,
+		method: "DELETE",
+		success: function(response) {
+			if(response.status == 'success') {
+				alert("삭제하였습니다.");
+				location.href = "/admin/question";
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,err) {
+			console.log(err);
+		}
+	});
+}
+</script>
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

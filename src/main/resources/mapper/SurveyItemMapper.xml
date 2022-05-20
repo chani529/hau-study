@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.SurveyItemMapper">
+
+    <resultMap id="SurveyItemMap" type="SurveyItemVo">
+        <result property="itemId" column="item_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="surveyId" column="survey_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="questionId" column="question_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="seq" column="seq" javaType="int" jdbcType="INTEGER"/>
+        <result property="editedBy" column="edited_by" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE"/>
+    </resultMap>
+
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="surveyId != null and surveyId != ''">
+                AND srv.survey_id = #{surveyId}
+            </if>
+            <if test="itemId != null and itemId != ''">
+                AND srv.item_id = #{itemId}
+            </if>
+            <if test="questionId != null and questionId != ''">
+                AND srv.question_id = #{questionId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="SurveyItemVo" resultType="SurveyItemVo" >
+        SELECT	item_id as itemId
+                , survey_id as surveyId
+                , question_id as questionId
+                , seq as seq
+                , edited_by as editedBy
+                , edited_ip as editedIp
+                , edited_at as editedAt
+        FROM tb_survey_item srv
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="queryListBySurvey" parameterType="java.util.Map" resultMap="com.example.study
+.mapper.QuestionMapper.QuestionMap" >
+        SELECT qust.question_id
+                , qust.question
+                , qust.question_type
+                , (SELECT code_title FROM tb_code code WHERE code.p_code = 'QUESTION_TYPE' AND code.code = qust.question_type) as question_type_val
+                , qust.answers
+                , qust.use_fg
+                , qust.edited_at
+                , qust.edited_ip
+                , qust.edited_by
+        FROM tb_question qust , tb_survey_item itm
+        WHERE qust.question_id = itm.question_id
+        AND itm.survey_id = #{surveyId}
+        ORDER BY itm.seq ASC
+    </select>
+
+    <select id="count" parameterType="SurveyVo" resultType="int">
+        SELECT count(1)
+        FROM tb_survey_item srv
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="SurveyItemMap" >
+        SELECT srv.*
+        FROM tb_survey_item srv
+        WHERE srv.survey_id = #{surveyId}
+    </select>
+
+    <insert id="insert" parameterType="SurveyItemVo" useGeneratedKeys="true" keyProperty="itemId">
+        INSERT INTO tb_survey_item (
+                survey_id
+                , question_id
+                , seq
+                , edited_by
+                , edited_ip
+                , edited_at
+            ) values (
+               #{surveyId}
+                , #{questionId}
+                , #{seq}
+                , #{editedBy}
+                , #{editedIp}
+                , now()
+            )
+            <selectKey resultType="int" order="AFTER" keyProperty="itemId">
+                SELECT LAST_INSERT_ID() as itemId
+            </selectKey>
+    </insert>
+
+    <update id="update" parameterType="SurveyItemVo">
+         UPDATE tb_survey_item SET
+           edited_at = now()
+        <if test="surveyId != null and surveyId != ''">
+            , srv.survey_id = #{surveyId}
+        </if>
+        <if test="questionId != null and questionId != ''">
+            , srv.question_id = #{questionId}
+        </if>
+        <if test="seq != null and seq != ''">
+            ,seq = #{seq}
+        </if>
+        <if test="editedIp != null and editedIp != ''">
+            ,edited_ip = #{editedIp}
+        </if>
+        <if test="editedBy != null and editedBy != ''">
+            ,edited_by = #{editedBy}
+        </if>
+        WHERE survey_id = #{surveyId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="surveyId != null and surveyId != ''">
+                AND srv.survey_id = #{surveyId}
+            </if>
+            <if test="questionId != null and questionId != ''">
+                AND srv.question_id = #{questionId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="SurveyItemMap" >
+        SELECT item_id
+               , survey_id
+               , question_id
+               , seq
+               , edited_by
+               , edited_ip
+               , edited_at
+            FROM tb_survey_item srv
+        <include refid="whereParamMap"/>
+        ORDER BY srv.survey_id DESC
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+         FROM tb_survey_item srv
+        <include refid="whereParamMap"/>
+    </select>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deleteBySurvey" parameterType="int">
+        DELETE
+        FROM tb_survey_item
+        WHERE survey_id = #{serveyId}
+    </delete>
+
+</mapper>

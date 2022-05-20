@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+			<!-- start page title -->
+			<div class="row align-items-center">
+				<div class="col-sm-6">
+					<div class="page-title-box">
+						<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+						<ol class="breadcrumb mb-0">
+							<li class="breadcrumb-item"><a href="/">home</a></li>
+							<li class="breadcrumb-item"><a href="/view/code">파일 관리</a></li>
+							<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+						</ol>
+					</div>
+				</div>
+
+				<div class="col-sm-6">
+				</div>
+			</div>
+			<!-- end page title -->
+
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-body">
+
+						<th:block th:if="${submitType == 'update'}">
+
+							<div class="form-group row">
+								<label for="account" class="col-sm-2 col-form-label">계정</label>
+								<div class="col-sm-4">
+									<input id="account" class="form-control" type="text" readonly />
+								</div>
+								<label for="codeLabel" class="col-sm-2 col-form-label">사용자명</label>
+								<div class="col-sm-4">
+									<input id="codeLabel" class="form-control" type="text" placeholder="사용자명" />
+								</div>
+							</div>
+
+						</th:block>
+						<th:block th:if="${submitType != 'update'}">
+
+							<div class="form-group row">
+								<label for="codeLabel" class="col-sm-2 col-form-label">사용자명</label>
+								<div class="col-sm-4">
+									<input id="codeLabel" class="form-control" type="text" placeholder="사용자명" />
+								</div>
+								<label for="account" class="col-sm-2 col-form-label">계정</label>
+								<div class="col-sm-4">
+									<input id="account" class="form-control" type="text" placeholder="계정" />
+								</div>
+							</div>
+							<div class="form-group row">
+								<label for="passwd1" class="col-sm-2 col-form-label">비밀번호</label>
+								<div class="col-sm-4">
+									<input id="passwd1" class="form-control" type="password" />
+								</div>
+								<label for="passwd2" class="col-sm-2 col-form-label">비밀번호 다시</label>
+								<div class="col-sm-4">
+									<input id="passwd2" class="form-control" type="password" />
+								</div>
+							</div>
+
+						</th:block>
+
+							<div class="form-group row">
+
+								<label for="phone" class="col-sm-2 col-form-label">전화번호</label>
+								<div class="col-sm-4">
+									<input id="phone" class="form-control" type="text" placeholder="전화번호" />
+								</div>
+							</div>
+
+							<div class="form-group row">
+								<label for="email" class="col-sm-2 col-form-label">이메일</label>
+								<div class="col-sm-10">
+									<input id="email" class="form-control" type="email" placeholder="hello@world.com" />
+								</div>
+							</div>
+
+							<div class="form-group row">
+								<div class="col-sm-12 text-right">
+									<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+									<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+								<th:block th:if="${submitType == 'update'}">
+									<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+								</th:block>
+
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div> <!-- end col -->
+			</div> <!-- end row -->
+
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+<script>
+var submitType = "[[${submitType}]]";
+var codeId = parseInt("[[${codeId}]]");
+
+jQuery(document).ready(function() {
+	if(submitType == "update") {
+		getInfo();
+	}
+});
+
+function getInfo() {
+	jQuery.ajax({
+	url: "/api/code/"+codeId,
+		success: function(response) {
+			if(response) {
+// console.log(response)
+				$("#account").val(response.account);
+				$("#codeLabel").val(response.codeLabel);
+				$("#phone").val(response.phone);
+				$("#email").val(response.email);
+			}
+
+/*
+if(response.img_path) {
+$("#imgArea").show();
+$("#accountImage").attr("src", "/upload/" + response.img_path);
+}
+*/
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+function evSave() {
+	var saveURL = "/api/code";
+	var saveMethod = "POST";
+	var codeInfo = {};
+
+	if(submitType == "update") {
+		saveMethod = "PUT";
+		codeInfo.codeId = codeId;
+	} else {
+		if($("#account").val() == "") {
+			alert("계정을 입력하세요.");
+			$("#account").focus();
+			return;
+		}
+		if($("#passwd1").val() == "") {
+			alert("비밀번호를 입력하세요.");
+			$("#passwd1").focus();
+			return;
+		}
+		if($("#passwd1").val() != $("#passwd2").val()) {
+			alert("비밀번호가 다릅니다.");
+			$("#passwd2").focus();
+			return;
+		}
+
+		codeInfo.account = $("#account").val();
+		codeInfo.passwrd = $("#passwd1").val();
+		codeInfo.append('account', $("#account").val());
+	}
+
+	if($("#codeLabel").val() == "") {
+		alert("사용자명을 입력하세요.");
+		$("#codeLabel").focus();
+		return;
+	}
+	if($("#phone").val() == "") {
+		alert("사용자 휴대전화번호를 입력하세요.");
+		$("#phone").focus();
+		return;
+	}
+
+	codeInfo.codeLabel = $("#codeLabel").val();
+	codeInfo.phone = $("#phone").val();
+	codeInfo.email = $("#email").val();
+
+// console.log(codeInfo);
+
+	jQuery.ajax({
+		url: saveURL,
+		method: saveMethod,
+		data: JSON.stringify( codeInfo ),
+
+		dataType: "json",
+		contentType: "application/json;charset=UTF-8",
+
+// contentType: false,
+// processData: false,
+		success: function(response) {
+			console.log(response)
+			if(response && response.resultCode) {
+				alert("저장하였습니다.");
+				if(submitType == "update") {
+					getInfo();
+				} else {
+					location.href = "/view/code";
+				}
+			}
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+}
+
+function evList() {
+	location.href = "/view/code";
+}
+
+function evDelete() {
+	jQuery.ajax({
+		url: "/api/code/"+codeId,
+		method: "DELETE",
+		success: function(response) {
+			if(response && response.resultCode) {
+				alert("삭제하였습니다.");
+				location.href = "/view/code";
+			}
+		},
+		error:function(request,status,err) {
+			console.log(err);
+		}
+	});
+}
+</script>
+
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

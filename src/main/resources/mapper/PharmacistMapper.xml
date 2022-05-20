@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.PharmacistMapper">
+    <resultMap id="PharmacistMap" type="PharmacistVo">
+        <result property="pharmacistId" column="pharmacist_id" javaType="int" jdbcType="INTEGER" />
+        <result property="pharmacistName" column="pharmacist_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="postCode" column="post_code" javaType="String" jdbcType="VARCHAR"/>
+        <result property="address1" column="address1" javaType="String" jdbcType="VARCHAR"/>
+        <result property="address2" column="address2" javaType="String" jdbcType="VARCHAR"/>
+        <result property="latitude" column="latitude" javaType="String" jdbcType="VARCHAR"/>
+        <result property="longitude" column="longitude" javaType="String" jdbcType="VARCHAR"/>
+        <result property="description" column="description" javaType="String" jdbcType="VARCHAR"/>
+        <result property="workStatus" column="work_status" javaType="String" jdbcType="VARCHAR"/>
+        <result property="times" column="times" javaType="String" jdbcType="VARCHAR" />
+        <result property="memo" column="memo" javaType="String" jdbcType="VARCHAR"/>
+        <result property="useFg" column="use_fg" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedBy" column="edited_by" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+
+        <collection property="accountVo" column="pharmacist_id" javaType="AccountVo" select="com.example.study.mapper.AccountMapper.selectOne" />
+    </resultMap>
+
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="pharmacistId != null and pharmacistId != ''">
+                AND pmct.pharmacist_id = #{pharmacistId}
+            </if>
+            <if test="useFlag != null and useFlag != ''">
+                AND pmct.use_fg = #{useFlag}
+            </if>
+            <if test="workStatus != null and workStatus != ''">
+                AND pmct.treat_status = #{workStatus}
+            </if>
+            <if test="pharmacistName != null and pharmacistName != ''">
+                AND pmct.pharmacist_name like concat('%', #{pharmacistName}, '%')
+            </if>
+            <if test="address1 != null and address1 != ''">
+                AND pmct.address1 like concat('%', #{address1}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="PharmacistVo" resultType="PharmacistVo" >
+        SELECT 
+            pharmacist_id as pharmacistId,
+            pharmacist_name as pharmacistName,
+            post_code as postCode,
+            address1 as address1,
+            address2 as address2,
+            latitude as latitude,
+            longitude as longitude,
+            work_status as worktStatus,
+            description as description,
+            times as times,
+            memo as memo,
+            use_fg as useFg,
+            edited_by as editedBy,
+            edited_ip as editedIp,
+            edited_at as editedAt
+        FROM tb_pharmacist pmct
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="PharmacistVo" resultType="int">
+        SELECT count(1)
+        FROM tb_pharmacist pmct
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="PharmacistMap" >
+        SELECT pmct.*
+        FROM tb_pharmacist pmct
+        WHERE pmct.pharmacist_id = #{pharmacistId}
+    </select>
+
+    <select id="findByAccount" parameterType="String" resultMap="PharmacistMap" >
+        SELECT pmct.*
+        FROM tb_pharmacist pmct
+        WHERE pmct.account = #{account}
+    </select>
+    
+
+    <insert id="insert" parameterType="PharmacistVo" useGeneratedKeys="true" keyProperty="pharmacistId">
+        INSERT INTO tb_pharmacist (
+                pharmacist_id
+                , pharmacist_name
+                , post_code
+                , address1
+                , address2
+                , latitude
+                , longitude
+                , work_status
+                , description
+                , times
+                , memo
+                , edited_by
+                , edited_ip
+                , edited_at
+            ) values (
+                #{pharmacistId}
+                ,  #{pharmacistName}
+                ,  #{postCode}
+                ,  #{address1}
+                ,  #{address2}
+                ,  #{latitude}
+                ,  #{longitude}
+                ,  #{workStatus}
+                ,  #{description}
+                ,  #{times}
+                ,  #{memo}
+                ,  #{editedBy}
+                ,  #{editedIp}
+                ,  now()
+            )
+            <selectKey resultType="int" order="AFTER" keyProperty="pharmacistId">
+                SELECT LAST_INSERT_ID() as pharmacistId
+            </selectKey>
+    </insert>
+
+    <update id="update" parameterType="PharmacistVo">
+         UPDATE tb_pharmacist SET
+           edited_at = now()
+        <if test="pharmacistName != null and pharmacistName != ''">
+            ,pharmacist_name = #{pharmacistName}
+        </if>
+        <if test="postCode != null and postCode != ''">
+            ,post_code = #{postCode}
+        </if>
+        <if test="address1 != null and address1 != ''">
+            ,address1 = #{address1}
+        </if>
+        <if test="address2 != null and address2 != ''">
+            ,address2 = #{address2}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            ,latitude = #{latitude}
+        </if>
+        <if test="longitude != null and longitude != ''">
+            ,longitude = #{longitude}
+        </if>
+        <if test="workStatus != null and workStatus != ''">
+            ,work_status = #{workStatus}
+        </if>
+        <if test="description != null and description != ''">
+            ,description = #{description}
+        </if>
+        <if test="times != null and times != ''">
+            ,times = #{times}
+        </if>
+        <if test="memo != null and memo != ''">
+            ,memo = #{memo}
+        </if>
+        <if test="useFg != null and useFg != ''">
+            ,use_fg = #{useFg}
+        </if>
+        <if test="editedBy != null and editedBy != ''">
+            ,edited_by = #{editedBy}
+        </if>
+        <if test="editedIp != null and editedIp != ''">
+            ,edited_ip = #{editedIp}
+        </if>
+        WHERE pharmacist_id = #{pharmacistId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND pmct.use_fg = #{useFlag}
+            </if>
+            <if test="pharmacistName != null and pharmacistName != ''">
+                AND pmct.pharmacist_name like concat('%', #{pharmacistName}, '%')
+            </if>
+            <if test="address1 != null and address1 != ''">
+                AND pmct.address1 like concat('%', #{address1}, '%')
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( pmct.pharmacist_name like concat('%', #{schtext}, '%')
+                or pmct.address1 like concat('%', #{schtext}, '%') )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="PharmacistMap" >
+        SELECT 
+                pharmacist_id
+                ,pharmacist_name
+                ,post_code
+                ,address1
+                ,address2
+                ,latitude
+                ,longitude
+                ,work_status
+                ,description
+                ,times
+                ,memo
+                ,use_fg
+                ,edited_by
+                ,edited_ip
+                ,edited_at
+            FROM tb_pharmacist pmct
+        <include refid="whereParamMap"/>
+        ORDER BY pmct.pharmacist_id DESC
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+        FROM tb_pharmacist pmct
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_pharmacist SET
+            use_fg = 'N'
+        WHERE pharmacist_id = #{pharmacistId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+        DELETE
+        FROM tb_pharmacist
+        WHERE pharmacist_id = #{pharmacistId}
+    </delete>
+
+</mapper>

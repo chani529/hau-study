@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.AccountMapper">
+    <resultMap id="AccountMap" type="AccountVo">
+        <result property="seq" column="seq" javaType="int" jdbcType="INTEGER"  />
+        <result property="account" column="account" javaType="String" jdbcType="VARCHAR"/>
+        <result property="password" column="password" javaType="String" jdbcType="VARCHAR"/>
+        <result property="fcmToken" column="fcm_token" javaType="String" jdbcType="VARCHAR"/>
+        <result property="refreshToken" column="refresh_token" javaType="String" jdbcType="VARCHAR"/>
+        <result property="roles" column="roles" javaType="String" jdbcType="VARCHAR"/>
+        <result property="approved" column="approved" javaType="String" jdbcType="VARCHAR"/>
+        <result property="useFg" column="use_fg" />
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+    </resultMap>
+
+    <select id="selectUserById" parameterType="String" resultMap="AccountMap" >
+        SELECT acc.*
+        FROM tb_account acc
+        WHERE acc.account = #{account}
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="AccountMap" >
+        SELECT acc.*
+        FROM tb_account acc
+        WHERE acc.seq = #{seq}
+    </select>
+
+    <insert id="insert" parameterType="AccountVo" useGeneratedKeys="true" keyProperty="seq">
+        INSERT INTO tb_account( account, password, fcm_token, refresh_token, roles, use_fg, approved,  edited_at) 
+        VALUES(#{account},  #{password},  #{fcmToken},  #{refreshToken},  #{roles},  #{useFg}, #{approved} , now())
+        <selectKey resultType="int" order="AFTER" keyProperty="seq">
+            SELECT LAST_INSERT_ID() as seq
+        </selectKey>
+    </insert>
+
+    <update id="updateRefreshToken" parameterType="AccountVo">
+        UPDATE tb_account SET
+            edited_at = now()
+            <if test="refreshToken != null and refreshToken != ''">
+            , refresh_token = #{refreshToken}
+            </if>
+        WHERE account = #{account}
+    </update>
+
+    <select id="selectByRefreshToken" parameterType="java.util.Map" resultMap="AccountMap" >
+        SELECT * 
+          FROM tb_account
+        WHERE refresh_token = #{refreshToken}
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+        UPDATE tb_account SET
+            use_fg = 'N'
+        WHERE seq = #{seq}
+    </update>
+    
+</mapper>

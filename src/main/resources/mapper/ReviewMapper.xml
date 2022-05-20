@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.ReviewMapper">
+
+    <resultMap id="ReviewMap" type="ReviewVo">
+        <result property="reviewId" column="review_id" javaType="int" jdbcType="INTEGER"  />
+        <result property="treatId" column="treat_id" javaType="int" jdbcType="INTEGER"  />
+        <result property="point" column="point" javaType="int" jdbcType="INTEGER"  />
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER"  />
+        <result property="doctorId" column="doctor_id" javaType="int" jdbcType="INTEGER"  />
+        <result property="hospitalId" column="hospital_id" javaType="int" jdbcType="INTEGER"  />
+        <result property="reserveId" column="reserve_id" javaType="int" jdbcType="INTEGER"  />
+        <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR" /> 
+        <result property="doctorName" column="doctor_name" javaType="String" jdbcType="VARCHAR" /> 
+        <result property="hospitalName" column="hospital_name" javaType="String" jdbcType="VARCHAR" /> 
+        <result property="reviewStatus" column="review_status" javaType="String" jdbcType="VARCHAR" />
+        <result property="review" column="review" javaType="String" jdbcType="VARCHAR" />
+        <result property="useFlag" column="use_fg" />
+        <result property="editedBy" column="edited_by" javaType="int" jdbcType="INTEGER"  />
+        <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE"  />
+    </resultMap>
+
+
+    <sql id="whereParamVo">
+        <if test="useFlag != null and useFlag != ''">
+          AND trv.use_fg = #{useFlag}
+        </if>
+        <if test="hospitalId != null and hospitalId != ''">
+          AND trt.hospital_id = #{hospitalId}
+        </if>
+        <if test="doctorId != null and doctorId != ''">
+          AND trt.doctor_id = #{doctorId} 
+        </if>
+        <if test="treatId != null and treatId != ''">
+         AND trv.treat_id = #{treatId}
+        </if>
+        <if test="userId != null and userId != ''">
+         AND trv.user_id =#{userId}
+        </if>
+        <if test="reviewStatus != null and reviewStatus != ''">
+         AND trv.review_status =#{reviewStatus}
+        </if>
+        <if test="schtext != null and schtext != ''">
+            AND ( usr.user_namelike concat('%', #{schtext}, '%')
+            or hspt.hospital_name like concat('%', #{schtext}, '%')
+            or doc.doctor_name like concat('%', #{schtext}, '%') )
+        </if>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.HashMap" resultMap="ReviewMap">
+        SELECT	trv.review_id
+                , trv.treat_id
+                , trv.point
+                , trv.user_id
+                , trv.review
+                , trv.review_status
+                , trv.use_fg
+                , trv.edited_by
+                , trv.edited_ip
+                , trv.edited_at
+                , trt.doctor_id
+                , trt.hospital_id
+                , trt.reserve_id
+                , usr.user_name
+                , doc.doctor_name
+                , hspt.hospital_name
+        FROM	tb_review trv 
+              , tb_treat trt
+              , tb_user usr
+              , tb_doctor doc
+              , tb_hospital hspt
+        WHERE	1=1
+          AND trv.treat_id = trt.treat_id
+          AND usr.user_id = trt.user_id
+          AND doc.doctor_id = trt.doctor_id
+          AND hspt.hospital_id = trt.hospital_id
+          <include refid="whereParamVo"/>
+        ORDER BY treat_id DESC , edited_at DESC
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="ReviewMap">
+        SELECT	trv.review_id
+                , trv.treat_id
+                , trv.point
+                , trv.user_id
+                , trv.review
+                , trv.use_fg
+                , trv.edited_by
+                , trv.edited_ip
+                , trv.edited_at
+                , trt.user_id
+                , trt.doctor_id
+                , trt.hospital_id
+                , trt.reserve_id
+                , trv.review_status
+                , usr.user_name
+                , doc.doctor_name
+                , hspt.hospital_name
+        FROM	tb_review trv 
+              , tb_treat trt
+              , tb_user usr
+              , tb_doctor doc
+              , tb_hospital hspt
+        WHERE	1=1
+          AND trv.treat_id = trt.treat_id
+          AND usr.user_id = trt.user_id
+          AND doc.doctor_id = trt.doctor_id
+          AND hspt.hospital_id = trt.hospital_id
+          AND trv.review_id = #{reviewId}
+    </select>
+
+    <select id="selectBestReview" parameterType="java.util.HashMap" resultMap="ReviewMap">
+        SELECT	trv.review_id
+                , trv.treat_id
+                , trv.point
+                , trv.user_id
+                , trv.review
+                , trv.use_fg
+                , trv.edited_by
+                , trv.edited_ip
+                , trv.edited_at
+        FROM	tb_review trv 
+                , tb_treat trt
+                , tb_user usr
+                , tb_doctor doc
+                , tb_hospital hspt
+       WHERE	trv.treat_id = trt.treat_id
+         AND usr.user_id = trt.user_id
+         AND doc.doctor_id = trt.doctor_id
+         AND hspt.hospital_id = trt.hospital_id
+         AND trv.treat_id IN (SELECT treat_id FROM tb_treat WHERE use_fg = 'Y' AND doctor_id = #{doctorId} AND hospital_id = #{hospitalId} )
+         AND trv.use_fg = 'Y'
+        ORDER BY trv.point DESC , trv.edited_at DESC
+        LIMIT 1
+    </select>
+
+  <update id="update" parameterType="ReviewVo">
+      UPDATE tb_review SET
+            edited_at = now()
+          <if test="treatId != null and treatId != ''">
+            ,treat_id = #{treatId}
+          </if>
+          <if test="point != null and point != ''">
+            ,point = #{point}
+          </if>
+          <if test="reviewStatus != null and reviewStatus != ''">
+            ,review_status = #{reviewStatus}
+          </if>
+          <if test="userId != null and userId != ''">
+            ,user_id = #{userId}
+          </if>
+          <if test="review != null and review != ''">
+            ,review = #{review}
+          </if>
+      WHERE review_id = #{reviewId}
+    </update>
+
+    <insert id="insert" parameterType="ReviewVo">
+        INSERT INTO tb_review(treat_id, point, user_id, review, review_status, edited_by, edited_ip, edited_at) 
+        VALUES( #{treatId},  #{point},  #{userId},  #{review},  #{reviewStatus}, #{editedBy},  #{editedIp}, now())
+    </insert>
+</mapper>

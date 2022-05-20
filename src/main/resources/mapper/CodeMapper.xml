@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.CodeMapper">
+
+    <resultMap id="CodeMap" type="CodeVo">
+        <result property="rowSeq" column="rowSeq" />
+        <result property="codeId" column="code_id" javaType="int" jdbcType="INTEGER" />
+        <result property="code" column="code" javaType="String" jdbcType="VARCHAR" />
+        <result property="parentCode" column="p_code" javaType="String" jdbcType="VARCHAR" />
+        <result property="parentCodeTitle" column="p_code_title" javaType="String" jdbcType="VARCHAR" />
+        <result property="codeTitle" column="code_title" javaType="String" jdbcType="VARCHAR" />
+        <result property="memo" column="memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="strVal" column="str_val" javaType="String" jdbcType="VARCHAR" />
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+        <result property="useFlag" column="use_fg" />
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND cod.use_fg = #{useFlag}
+            </if>
+            <if test="code != null and code != ''">
+                AND cod.code like concat('%', #{code}, '%')
+            </if>
+            <if test="parentCode != null and parentCode != ''">
+                AND cod.p_code like concat('%', #{parentCode}, '%')
+            </if>
+            <if test="codeTitle != null and codeTitle != ''">
+                AND cod.code_title like concat('%', #{codeTitle}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="CodeVo" resultType="CodeVo" >
+        SELECT code_id as codeId
+            , code
+            , p_code as parentCode
+            , p_code_title as prentCodeTitle
+            , code_title as codeTitle
+            , str_val as strVal
+            , memo as memo
+            , str_val as strVal
+            , edited_at as editedAt
+        FROM tb_code cod
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="CodeVo" resultType="int">
+        SELECT count(1)
+        FROM tb_code cod
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="CodeMap" >
+        SELECT cod.*
+        FROM tb_code cod
+        WHERE cod.code_id = #{codeId}
+    </select>
+
+    <insert id="insert" parameterType="CodeVo" useGeneratedKeys="true" keyProperty="codeId">
+        INSERT INTO tb_code (
+                code
+               ,p_code
+               ,p_code_title
+               ,code_title
+               ,str_val
+               ,memo
+               ,edited_at
+              ) values (
+                #{code}
+               ,#{parentCode}
+               ,#{parentCodeTitle}
+               ,#{codeTitle}
+               ,#{strVal}
+               ,#{memo}
+               ,now()
+              )
+        <selectKey resultType="int" order="AFTER" keyProperty="codeId">
+            SELECT LAST_INSERT_ID() as codeId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="CodeVo">
+        UPDATE tb_code SET
+            edited_at = now()
+            <if test="codeTitle != null and codeTitle != ''">
+            ,code_title = #{codeTitle}
+            </if>
+            <if test="parentCodeTitle != null and parentCodeTitle != ''">
+            ,p_code_title = #{parentCodeTitle}
+            </if>
+            <if test="strVal != null and strVal != ''">
+            ,str_val = #{strVal}
+            </if>
+            <if test="memo != null">
+            ,memo = #{memo}
+            </if>
+        WHERE code_id = #{codeId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND cod.use_fg = #{useFlag}
+            </if>
+            <if test="parentCode != null and parentCode != ''">
+                AND cod.p_code = #{parentCode}
+            </if>
+            <if test="code != null and code != ''">
+                AND cod.code like #{code}
+            </if>
+            <if test="parentCodeTitle != null and parentCodeTitle != ''">
+                AND cod.p_code_title like = #{parentCodeTitle}
+            </if>
+            <if test="parentCode != null and parentCode != ''">
+                AND cod.p_code like concat('%', #{parentCode}, '%')
+            </if>
+            <if test="codeTitle != null and codeTitle != ''">
+                AND cod.code_title like concat('%', #{codeTitle}, '%')
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( cod.code like concat('%', #{schtext}, '%')
+                or cod.p_code like concat('%', #{schtext}, '%')
+                or cod.code_title like concat('%', #{schtext}, '%') )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="CodeMap" >
+    SELECT cod.*
+      FROM (
+           SELECT cod.*
+             FROM tb_code cod
+        <include refid="whereParamMap"/>
+         ORDER BY cod.code_id DESC
+           ) cod
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+    SELECT count(1)
+      FROM tb_code cod
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_code SET
+           use_fg = 'N'
+     WHERE code_id = #{codeId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+    DELETE
+      FROM tb_code
+     WHERE code_id = #{codeId}
+    </delete>
+
+    <select id="getParentList" resultType="java.util.HashMap">
+        select p_code_title as CODE_TITLE, p_code as CODE_ID from tb_code where use_fg = 'Y' group by p_code 
+    </select>
+
+</mapper>

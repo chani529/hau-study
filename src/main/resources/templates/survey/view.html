@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+	<!-- DataTables -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css}" />
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css}" />
+	<!-- Responsive datatable examples -->
+	<link rel="stylesheet" type="text/css" th:href="@{/libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css}" />
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+			<!-- start page title -->
+			<div class="row align-items-center">
+				<div class="col-sm-6">
+					<div class="page-title-box">
+						<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+						<ol class="breadcrumb mb-0">
+							<li class="breadcrumb-item"><a href="/">home</a></li>
+							<li class="breadcrumb-item"><a href="/view/servey">설문 관리</a></li>
+							<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+						</ol>
+					</div>
+				</div>
+
+				<div class="col-sm-6">
+				</div>
+			</div>
+
+
+
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						
+						<div class="card-body">
+
+							<div class="form-group row">
+								<label for="schtxt" class="col-md-2 col-sm-3 col-form-label">검색</label>
+								<div class="col-md-7 col-sm-5">
+									<input id="schtxt" class="form-control" type="text" placeholder="이름, 계정, 전화번호" />
+								</div>
+								<div class="col-md-3 col-sm-4 text-right">
+									<button type="button" onclick="evSearch();" class="btn btn-info">검색</button>
+								</div>
+							</div>
+							<table id="mainGrid" class="table table-striped table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+								<thead>
+								<tr>
+									<th>이름</th>
+									<th>계정</th>
+									<th>전화번호</th>
+									<th>이메일</th>
+								</tr>
+								</thead>
+								<tbody></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			<form id="registForm" name="registForm">
+			<div class="form-group row">
+				<label for="userName" class="col-sm-2 col-form-label">참여 유저명</label>
+				<div class="col-sm-4">
+					<input id="surveyId" required readonly name="surveyId" type="hidden" />
+					<input id="userId" required readonly name="userId" type="hidden" />
+					<input id="userName" required readonly name="userName" class="form-control" type="text" placeholder="참여 유저명" />
+				</div>
+
+				<label for="account" class="col-sm-2 col-form-label">참여 계정</label>
+				<div class="col-sm-4">
+					<input id="account" required readonly name="account" class="form-control" type="text" placeholder="참여 계정" />
+				</div>
+			</div>
+			</form>
+
+			<div class="row">
+				<div class="col-lg-12">
+					<div class="card text-white bg-info">
+						<div class="card-body">
+							<blockquote class="card-blockquote mb-0">
+								<p id="surveyTitle"></p>
+								<footer class="blockquote-footer text-white font-12 m-0" id="memo">
+								</footer>
+							</blockquote>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+
+
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<form id="registForm" name="registForm">
+							<div class="card-body">
+								<div class="row" id="surveyItems">
+								</div>
+								<div class="form-group row">
+									<div class="col-sm-12 text-right">
+										<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+										<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+										<th:block th:if="${submitType == 'update'}">
+											<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+										</th:block>
+									</div>
+								</div>
+
+							</div>
+						</form>
+					</div>
+				</div> <!-- end col -->
+			</div> <!-- end row -->
+			
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+
+
+<!-- Required datatable js -->
+<!-- <script th:src="@{/libs/datatables.net/js/jquery.dataTables.min.js}"></script> -->
+<script th:src="@{/js/jquery.dataTables.kr.js}"></script>
+<script th:src="@{/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js}"></script>
+<!-- Buttons examples -->
+<script th:src="@{/libs/datatables.net-buttons/js/dataTables.buttons.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js}"></script>
+<script th:src="@{/libs/jszip/jszip.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/pdfmake.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/vfs_fonts.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.html5.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.print.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.colVis.min.js}"></script>
+<!-- Responsive examples -->
+<script th:src="@{/libs/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js}"></script>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<script>
+var submitType = "[[${submitType}]]";
+var surveyId = parseInt("[[${surveyId}]]");
+
+jQuery(document).ready(function() {
+	getInfo();
+});
+
+let questionTemplate = `
+<div class="col-lg-12">
+	<div class="card text-white bg-success">
+		<div class="card-body">
+			<blockquote class="card-blockquote mb-0">
+				<p>$QUESTION$</p>
+				$ANSWERS$
+			</blockquote>
+		</div>
+	</div>
+</div>`;
+
+function getInfo() {
+	jQuery.ajax({
+	url: "/api/survey/"+surveyId,
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				$("#surveyId").val(response.result.data.surveyId);
+				$("#surveyTitle").text(response.result.data.surveyTitle);
+				$("#memo").text(response.result.data.surveyMemo);
+				var questions = response.result.data.items;
+				var questionsHtml = '';
+				var questionHtml = '';
+				$.each(questions , function(index, question){
+					var answersHtml = '';
+					questionHtml = questionTemplate.replace('$QUESTION$' , '['+question.questionTypeVal+'] ' + question.question + '<input type="hidden" name="questionId" id="question_'+question.questionId+'" value='+question.questionId+' />');
+					var answers = JSON.parse(question.answers);
+					$.each(answers , function(index2, answer){
+						answersHtml += '<p class="text-white font-12"><input type="radio" data='+answer.factor+' value='+answer.seq+' name="answer_'+question.questionId+'" />' + (index2 + 1) + ". "+answer.label+'</p>';
+					});
+					questionHtml = questionHtml.replace('$ANSWERS$' , answersHtml);
+					questionsHtml  = questionsHtml + questionHtml;
+				});
+
+				$("#surveyItems").html(questionsHtml);
+			}
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+
+function evSave() {
+	var saveURL = "/api/response";
+	var saveMethod = "POST";
+	
+	if($("#userId").val() == ''){
+		alert("유저를 선택하여 주세요.");
+		return false;
+	}
+
+	var questionIds = new Array();
+	var isCheck = true;
+	$.each($("input[name=questionId]") , function(index, question){
+		var questionObj =  {};
+		var answer = $("input[name=answer_"+$(question).val()+"]:checked");
+		if(answer.length == 0){
+			alert('모든 항목에 응답하여 주세요.');
+			$(question).focus();
+			isCheck = false;
+			return false;
+		}
+
+		questionObj['questionId'] = parseInt($(question).val());
+		questionObj['value'] = $(answer).val();
+		questionObj['factor'] = $(answer).attr('data');
+		questionIds.push(questionObj);
+
+	});
+	console.log(questionIds);
+
+	if(!isCheck){
+		return false;
+	}
+
+	var obj = $("#registForm").serializeObject();
+	obj['items'] = questionIds;
+
+	console.log(obj);
+	jQuery.ajax({
+		url: saveURL,
+		method: saveMethod,
+		data: JSON.stringify(obj),
+		dataType: "json",
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				alert("저장하였습니다.");
+				if(submitType == "update") {
+					getInfo();
+				} else {
+					location.href = "/admin/userAddress";
+				}
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+	
+}
+
+
+
+function loadData(){
+	var schtext = $("#schtxt").val();
+	jQuery.ajax({
+		url: "/api/user?schtext="+ schtext,
+		dataType: "json",
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				mainTable = $('#mainGrid').DataTable({
+				data : response.result.data,
+				columns: [
+					{"data":"username"},
+					{"data":"account"},
+					{"data":"phone"},
+					{"data":"email"}
+					],
+				destroy : true,
+				lengthChange: false,
+				searching : false
+				});
+
+
+				$('#mainGrid tbody').on('click', 'tr', function () {
+					var rowData = mainTable.row( $(this) ).data();
+					//location.href = "/user/"+ rowData.userId;
+					$("#userId").val(rowData.userId);
+					$("#userName").val(rowData.userName);
+					$("#account").val(rowData.account);
+				});
+
+			}
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+}
+
+// 사용자 조회 스크립트
+var mainTable = null;
+function evSearch() {
+	loadData();
+}
+
+
+</script>
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

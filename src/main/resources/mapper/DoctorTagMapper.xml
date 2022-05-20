@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.DoctorTagMapper">
+
+    <resultMap id="DoctorTagMap" type="DoctorTagVo">
+        <result property="tagId" column="tag_id" />
+        <result property="doctorId" column="doctor_id" />
+        <result property="doctorName" column="doctor_name" />
+        <result property="account" column="account" />
+        <result property="phone" column="phone" />
+        <result property="tag" column="tag" />
+        <result property="addedBy" column="added_by" />
+        <result property="addedAt" column="added_at" />
+        <result property="useFlag" column="use_fg"/>
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND tag.use_fg = #{useFlag}
+            </if>
+            <if test="tag != null and tag != ''">
+                AND tag.tag = #{tag}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="DoctorTagVo" resultType="DoctorTagVo">
+    SELECT tag_id as tagId, doctor_id as doctorId, tag 
+      FROM tb_doctor_tag tag
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="DoctorTagVo" resultType="int">
+    SELECT count(1)
+      FROM tb_doctor_tag tag
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="DoctorTagMap" >
+    SELECT tag.*
+      FROM tb_doctor_tag tag
+     WHERE tag.tag_id = #{tagId}
+    </select>
+
+    <insert id="insert" parameterType="DoctorTagVo" useGeneratedKeys="true" keyProperty="tagId">
+    INSERT INTO tb_doctor_tag (
+                doctor_id
+                , tag
+                , added_by
+                , added_at
+              ) values (
+                #{doctorId}
+                , #{tag}
+                , #{addedBy}
+                , now()
+              )
+        <selectKey resultType="int" order="AFTER" keyProperty="tagId">
+            SELECT LAST_INSERT_ID() as tagId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="DoctorTagVo">
+    UPDATE tb_doctor_tag SET
+        <if test="doctorId != null">
+          ,doctor_id = #{doctorId}
+        </if>
+        <if test="tag != null and tag != ''">
+          ,tag = #{tag}
+        </if>
+     WHERE tag_id = #{tagId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND tag.use_fg = #{useFlag}
+            </if>
+            
+            <if test="schtext != null and schtext != ''">
+                AND ( tag.tag like concat('%', #{schtext}, '%')
+                or tag.doctor_name like concat('%', #{schtext}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="DoctorTagMap" >
+      SELECT tag.*
+        FROM (
+              SELECT *
+                FROM (
+                  SELECT dotor.* , tag.tag
+                    FROM tb_doctor dotor 
+                  LEFT OUTER JOIN 
+                  (SELECT GROUP_CONCAT(tag) as tag , doctor_id FROM tb_doctor_tag WHERE use_fg = 'Y' GROUP BY doctor_id) tag
+                  ON tag.doctor_id = dotor.doctor_id
+                ) tag
+          <include refid="whereParamMap"/>
+          ORDER BY tag.doctor_id desc
+            ) tag
+          <if test="listCount != null and listCount != ''">
+            LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+          </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+    SELECT count(1)
+      FROM tb_doctor_tag tag
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_doctor_tag SET
+           use_fg = 'N'
+     WHERE tag_id = #{tag_id}
+    </update>
+
+
+    <update id="deleteByDoctor" parameterType="int">
+    UPDATE tb_doctor_tag SET
+           use_fg = 'N'
+     WHERE doctor_id = #{doctor_id}
+    </update>
+    
+</mapper>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/defaultLayout">
+
+<th:block layout:fragment="headBlock">
+	<title>[[${menuTitle}]]</title>
+</th:block>
+
+<th:block layout:fragment="mainContent">
+
+	<!-- start page title -->
+	<div class="row align-items-center">
+		<div class="col-sm-6">
+			<div class="page-title-box">
+				<h4 class="font-size-18" th:text="${menuTitle}"></h4>
+				<ol class="breadcrumb mb-0">
+					<li class="breadcrumb-item"><a href="/">home</a></li>
+					<li class="breadcrumb-item"><a href="/doctorTag">의사 태그 관리</a></li>
+					<li class="breadcrumb-item active" th:text="${menuTitle}"></li>
+				</ol>
+			</div>
+		</div>
+
+		<div class="col-sm-6">
+		</div>
+	</div>
+	<!-- end page title -->
+	
+	<div class="row">
+		<div class="col-12">
+			<div class="card">
+				<form id="registForm" name="registForm">
+					<div class="card-body">
+
+						<div class="form-group row">
+							<label for="hospitalName" class="col-sm-2 col-form-label">의사명</label>
+							<div class="col-sm-4">
+								<input id="doctorId" name="doctorId" type="hidden" />
+								<input id="doctorName" name="doctorName" required readonly class="form-control" type="text" />
+							</div>
+
+						</div>
+
+
+						<div class="form-group row">
+							<div class="card-body text-center">
+								<div class="color-box p-1 rounded bg-warning">
+									<div class="col-xl-3 col-lg-1 col-sm-6 my-1 text-white"><i class="mdi mdi-information-outline"></i><span>","를 구분자로 여러개가 한번에 등록 가능합니다.</span></div>												
+								</div>
+							</div>
+						</div>
+
+						<div class="form-group row">
+							<label for="tag" class="col-sm-2 col-form-label">태그</label>
+							<div class="col-sm-10"><input required id="tag" name="tag" class="form-control"></div>
+						</div>
+
+						<div class="form-group row">
+							<div class="col-sm-12 text-right">
+								<button type="button" onclick="evList();" class="btn btn-info">목록으로</button>
+								<button type="button" onclick="evSave();" class="btn btn-primary">저장</button>
+
+							<th:block th:if="${submitType == 'update'}">
+								<button type="button" onclick="evDelete();" class="btn btn-warning ">삭제</button>
+							</th:block>
+
+							</div>
+						</div>
+
+					</div>
+				</form>
+			</div>
+		</div> <!-- end col -->
+	</div> <!-- end row -->
+</th:block>
+
+<th:block layout:fragment="endBlock">
+
+<!-- Required datatable js -->
+<!-- <script th:src="@{/libs/datatables.net/js/jquery.dataTables.min.js}"></script> -->
+<script th:src="@{/js/jquery.dataTables.kr.js}"></script>
+<script th:src="@{/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js}"></script>
+<!-- Buttons examples -->
+<script th:src="@{/libs/datatables.net-buttons/js/dataTables.buttons.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js}"></script>
+<script th:src="@{/libs/jszip/jszip.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/pdfmake.min.js}"></script>
+<script th:src="@{/libs/pdfmake/build/vfs_fonts.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.html5.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.print.min.js}"></script>
+<script th:src="@{/libs/datatables.net-buttons/js/buttons.colVis.min.js}"></script>
+<!-- Responsive examples -->
+<script th:src="@{/libs/datatables.net-responsive/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js}"></script>
+
+<script>
+var submitType = "[[${submitType}]]";
+var doctorId = parseInt("[[${doctorId}]]");
+
+jQuery(document).ready(function() {
+	if(submitType == "update") {
+		getInfo();
+	}
+});
+
+function getInfo() {
+	jQuery.ajax({
+		url: "/api/doctor/"+doctorId,
+		success: function(response) {
+			if(response.status == 'success') {
+				$("#doctorId").val(response.result.data.doctorId);
+				$("#doctorName").val(response.result.data.doctorName);
+				jQuery.ajax({
+					url: "/api/doctorTag/doctor/"+doctorId,
+					success: function(response) {
+						console.log(response);
+						if(response.status == 'success') {
+							var tags = new Array();
+							$.each(response.result.data , function(index , tag){
+								if(tag.useFlag == 'Y'){
+									tags.push(tag.tag);
+								}
+							});
+							$("#tag").val(tags.join(","));
+						} else {
+							alert(response.message);
+						}
+					},
+					error:function(request,status,error){
+						console.log(error);
+					}
+				});
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,error){
+			console.log(error);
+		}
+	});
+}
+
+function evSave() {
+	var saveURL = "/api/doctorTag/doctor";
+	var saveMethod = "POST";
+	// var userInfo = {};
+	var userInfo = new FormData();
+
+	if(submitType == "update") {
+		saveMethod = "PUT";
+		saveURL += "/" + doctorId;
+
+	} 
+
+	var valid = fromValidateCheck("#registForm");
+	console.log(JSON.stringify($("#registForm").serializeObject()));
+	if(valid){
+		jQuery.ajax({
+			url: saveURL,
+			method: saveMethod,
+			data: JSON.stringify($("#registForm").serializeObject()),
+			dataType: "json",
+			contentType: "application/json;charset=UTF-8",
+			success: function(response) {
+				if(response.status == 'success'){
+					alert("저장하였습니다.");
+					if(submitType == "update") {
+						getInfo();
+					} else {
+						location.href = "/admin/doctorTag";
+					}
+				} else {
+					alert(response.message);
+				}
+			},
+			error:function(request,status,err){
+				console.log(err);
+			}
+		});
+	}
+}
+
+function evList() {
+	location.href = "/admin/doctorTag";
+}
+
+function evDelete() {
+	jQuery.ajax({
+		url: "/api/doctorTag/doctor/"+doctorId,
+		method: "DELETE",
+		success: function(response) {
+			if(response.status == 'success') {
+				alert("삭제하였습니다.");
+				location.href = "/admin/doctorTag";
+			} else {
+				alert(response.message);
+			}
+		},
+		error:function(request,status,err) {
+			console.log(err);
+		}
+	});
+}
+
+function loadData(){
+	var schtext = $("#schtxt").val();
+	jQuery.ajax({
+		url: "/api/doctor?schtext="+ schtext,
+		dataType: "json",
+		contentType: "application/json;charset=UTF-8",
+		success: function(response) {
+			console.log(response);
+			if(response.status == 'success') {
+				mainTable = $('#mainGrid').DataTable({
+				data : response.result.data,
+				columns: [
+					{"data":"doctorName"},
+					{"data":"account"},
+					{"data":"phone"},
+					{"data":"email"}
+				],
+				destroy : true,
+				// lengthChange: false,
+				//buttons: ['copy', 'excel', 'pdf']
+				});
+				$('#mainGrid tbody').on('click', 'tr', function () {
+					var rowData = mainTable.row( $(this) ).data();
+					$("#doctorId").val(rowData.doctorId);
+					$("#doctorName").val(rowData.doctorName);
+					$("#account").val(rowData.account);
+				});
+			}
+		},
+		error:function(request,status,err){
+			console.log(err);
+		}
+	});
+}
+
+function evSearch() {
+	var schText = $("#schtxt").val();
+	if(schText == ''){
+		alert("검색어를 입력하여 주세요.");
+		$("#schtxt").focus();
+		return false;
+	}
+	loadData();
+}
+
+</script>
+
+<script th:src="@{/js/app.js}"></script>
+
+</th:block>
+
+</html>

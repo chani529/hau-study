@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.mapper.ReservationMapper">
+
+    <resultMap id="ReservationMap" type="ReservationVo">
+        <result property="reserveId" column="reserve_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="hospitalId" column="hospital_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="doctorId" column="doctor_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER"/>
+        <result property="reserveTime" column="reserve_time" javaType="String" jdbcType="VARCHAR"/>
+        <result property="reserveMemo" column="reserve_memo" javaType="String" jdbcType="VARCHAR" />
+        <result property="reserveStatus" column="reserve_status" javaType="String" jdbcType="VARCHAR"/>
+        <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="doctorName" column="doctor_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="hospitalName" column="hospital_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="useFlag" column="use_fg" />
+        <result property="editedBy" column="edited_by" javaType="int" jdbcType="INTEGER"/>
+        <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+
+        <!--
+        <collection property="hospital" column="{hospitalId=hospital_id}" javaType="HospitalVo" select="com.example.study.mapper.HospitalMapper.selectList" />
+        <collection property="doctor" column="{doctorId=doctor_id}" javaType="doctorVo" select="com.example.study.mapper.DoctorMapper.selectList" />
+        <collection property="user" column="{userId=user_id}" javaType="userVo" select="com.example.study.mapper.UserMapper.selectList" />
+        -->
+
+    </resultMap>
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="reserveId != null and reserveId != ''">
+                AND reserve_id = #{reserveId}
+            </if>
+            <if test="hospitalId != null and hospitalId != ''">
+                AND hospital_id = #{hospitalId}
+            </if>
+            <if test="doctorId != null and doctorId != ''">
+                AND doctor_id = #{doctorId}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND user_id = #{userId}
+            </if>
+            <if test="reserveTime != null and reserveTime != ''">
+                AND reserve_time = #{reserveTime}
+            </if>
+            <if test="reserveMemo != null and reserveMemo != ''">
+                AND reserve_memo = #{reserveMemo}
+            </if>
+            <if test="reserveStatus != null and reserveStatus != ''">
+                AND reserve_status = #{reserveStatus}
+            </if>
+            <if test="useFg != null and useFg != ''">
+                AND use_fg = #{useFg}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="ReservationVo" resultType="ReservationVo" >
+    SELECT  reserve_id as reserveId,
+            hospital_id as hospitalId,
+            doctor_id as doctorId,
+            user_id as userId,
+            reserve_time as reserveTime,
+            reserve_memo as reserveMemo,
+            reserve_status as reserveStatus,
+            use_fg as useFg,
+            edited_by as editedBy,
+            edited_at as editedAt
+      FROM tb_reservation res
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="ReservationVo" resultType="int">
+    SELECT count(1)
+      FROM tb_reservation res
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="ReservationMap" >
+        SELECT res.reserve_id
+                , res.hospital_id
+                , res.doctor_id
+                , res.user_id
+                , res.reserve_time
+                , res.reserve_memo
+                , res.reserve_status
+                , res.use_fg
+                , res.edited_by
+                , res.edited_at
+                , doc.doctor_name
+                , hspt.hospital_name
+                , usr.user_name
+            FROM tb_reservation res
+                , tb_doctor doc
+                , tb_hospital hspt
+                , tb_user usr
+            WHERE res.doctor_id = doc.doctor_id
+                AND res.hospital_id = hspt.hospital_id
+                AND res.user_id = usr.user_id  
+                AND res.reserve_id = #{reserveId}
+    </select>
+
+    <insert id="insert" parameterType="ReservationVo" useGeneratedKeys="true" keyProperty="reserveId">
+        INSERT INTO tb_reservation(
+            hospital_id
+            , doctor_id
+            , user_id
+            , reserve_time
+            , reserve_memo
+            , reserve_status
+            , use_fg
+            , edited_by
+            , edited_at
+        ) VALUES( 
+            #{hospitalId}
+            ,  #{doctorId}
+            ,  #{userId}
+            ,  #{reserveTime}
+            ,  #{reserveMemo}
+            ,  #{reserveStatus}
+            ,  #{useFg}
+            ,  #{editedBy}
+            ,  #{editedAt}
+        )
+        <selectKey resultType="int" order="AFTER" keyProperty="reserveId">
+            SELECT LAST_INSERT_ID() as reserveId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="ReservationVo">
+        UPDATE tb_reservation SET
+           edited_at = now()
+            <if test="hospitalId != null and hospitalId != ''">
+                , hospital_id = #{hospitalId}
+            </if>
+            <if test="doctorId != null and doctorId != ''">
+                , doctor_id = #{doctorId}
+            </if>
+            <if test="userId != null and userId != ''">
+                , user_id = #{userId}
+            </if>
+            <if test="reserveTime != null and reserveTime != ''">
+                , reserve_time = #{reserveTime}
+            </if>
+            <if test="reserveMemo != null and reserveMemo != ''">
+                , reserve_memo = #{reserveMemo}
+            </if>
+            <if test="reserveStatus != null and reserveStatus != ''">
+                , reserve_status = #{reserveStatus}
+            </if>
+            <if test="useFlag != null and useFlag != ''">
+                , use_fg = #{useFlag}
+            </if>
+            <if test="editedBy != null and editedBy != ''">
+                , edited_by = #{editedBy}
+            </if>
+         WHERE reserve_id = #{reserveId}
+    </update>
+
+    <sql id="whereParamMap">
+
+        <if test="reserveId != null and reserveId != ''">
+            AND res.reserve_id = #{reserveId}
+        </if>
+        <if test="hospitalId != null and hospitalId != ''">
+            AND res.hospital_id = #{hospitalId}
+        </if>
+        <if test="doctorId != null and doctorId != ''">
+            AND res.doctor_id = #{doctorId}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND res.user_id = #{userId}
+        </if>
+        <if test="reserveTime != null and reserveTime != ''">
+            AND res.reserve_time = #{reserveTime}
+        </if>
+        <if test="reserveMemo != null and reserveMemo != ''">
+            AND res.reserve_memo = #{reserveMemo}
+        </if>
+        <if test="reserveStatus != null and reserveStatus != ''">
+            AND res.reserve_status = #{reserveStatus}
+        </if>
+        <if test="useFg != null and useFg != ''">
+            AND res.use_fg = #{useFg}
+        </if>
+        <if test="schtext != null and schtext != ''">
+            AND (
+                hspt.hospital_name like concat('%', #{schtext}, '%')
+                or doc.doctor_name like concat('%', #{schtext}, '%')
+                or usr.user_name like concat('%', #{schtext}, '%')
+            )
+        </if>
+
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="ReservationMap" >
+        SELECT res.* 
+        FROM (
+            SELECT res.reserve_id
+                    , res.hospital_id
+                    , res.doctor_id
+                    , res.user_id
+                    , res.reserve_time
+                    , res.reserve_memo
+                    , res.reserve_status
+                    , res.use_fg
+                    , res.edited_by
+                    , res.edited_at
+                    , doc.doctor_name
+                    , hspt.hospital_name
+                    , usr.user_name
+                FROM tb_reservation res
+                    , tb_doctor doc
+                    , tb_hospital hspt
+                    , tb_user usr
+                WHERE res.doctor_id = doc.doctor_id
+                 AND res.hospital_id = hspt.hospital_id
+                 AND res.user_id = usr.user_id  
+            <include refid="whereParamMap"/>
+            ORDER BY res.reserve_id, edited_at
+        ) res
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+        SELECT count(1)
+        FROM tb_reservation res
+            , tb_doctor doc
+            , tb_hospital hspt
+            , tb_user usr
+        WHERE res.doctor_id = doc.doctor_id
+        AND res.hospital_id = hspt.hospital_id
+        AND res.user_id = usr.user_id  
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_reservation SET
+           use_fg = 'N'
+     WHERE reserve_id = #{reserveId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+    DELETE
+      FROM tb_reservation
+     WHERE reserve_id = #{reserveId}
+    </delete>
+
+</mapper>

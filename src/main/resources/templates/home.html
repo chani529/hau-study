@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="UTF-8">
+<title>home</title>
+</head>
+
+<body>
+<h2 th:text="${message}">Thymeleaf Template Sample</h2>
+query {
+    searchBrands(brandName:"hellos", brandCode:"1111") {
+        brandName
+        brandCode
+    }
+    getBrand(brandId:1) {
+        brandName
+        brandCode
+    }
+}
+
+mutation {
+    insertBrand(brand:{
+        brandName:"hellos", brandCode:"1111", tag:"qqq"
+    })
+}
+mutation {
+    updateBrand(brand:{
+        brandId:5, brandName:"hellos", brandCode:"1111", tag:"qqq"
+    })
+}
+</body>
+</html>

@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study
+.mapper.UserAddressMapper">
+
+
+    <resultMap id="UserAddressMap" type="UserAddressVo">
+      <result property="addressId" column="address_id" javaType="int" jdbcType="INTEGER"/>
+      <result property="userId" column="user_id" javaType="int" jdbcType="INTEGER"/>
+      <result property="addressKind" column="address_kind" javaType="String" jdbcType="VARCHAR" />
+      <result property="addressKindTitle" column="address_kind_title" javaType="String" jdbcType="VARCHAR"  />
+      <result property="addressTitle" column="address_title" javaType="String" jdbcType="VARCHAR" />
+      <result property="postCode" column="post_code" javaType="String" jdbcType="VARCHAR"  />
+      <result property="address1" column="address1" javaType="String" jdbcType="VARCHAR"  />
+      <result property="address2" column="address2" javaType="String" jdbcType="VARCHAR" />
+      <result property="userMemo" column="user_memo" javaType="String" jdbcType="VARCHAR"  />
+      <result property="isBasic" column="is_basic" javaType="String" jdbcType="VARCHAR"  />
+      <result property="useFlag" column="use_fg" />
+      <result property="userName" column="user_name" javaType="String" jdbcType="VARCHAR" />
+      <result property="editedBy" column="edited_by" javaType="int" jdbcType="INTEGER" />
+      <result property="editedIp" column="edited_ip" javaType="String" jdbcType="VARCHAR" />
+      <result property="editedAt" column="edited_at" javaType="java.time.Instant" jdbcType="DATE" />
+
+      <collection property="accountVo" column="user_id" javaType="AccountVo" select="com.example.study
+.mapper.AccountMapper.selectOne" />
+    </resultMap>
+
+
+    <!-- /* Basic Function */ -->
+    <sql id="whereParamVo">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND addr.use_fg = #{useFlag}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND addr.user_id = #{userId}
+            </if>
+            <if test="addressKind != null and addressKind != ''">
+                AND addr.address_kind = #{addressKind}
+            </if>
+            <if test="isBasic != null and isBasic != ''">
+                AND addr.is_basic = #{isBasic}
+            </if>
+            <if test="addressTitle != null and addressTitle != ''">
+                AND addr.address_title like concat('%', #{addressTitle}, '%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND usr.user_name like concat('%', #{userName}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectList" parameterType="UserAddressVo" resultType="UserAddressVo" >
+        SELECT	address_id as addressId,
+                user_id as userId,
+                address_kind as addressKind,
+                address_title as addressTitle,
+                is_basic as isBasic,
+                post_code as postCode,
+                address1 as address1,
+                address2 as address2,
+                user_memo as userMemo,
+                use_fg as useFlag,
+                edited_by as editedBy,
+                edited_ip as editedIp,
+                edited_at as editedAt,
+                user_name as userName
+      FROM tb_user_address addr
+      JOIN tb_user usr ON usr.user_id = addr.user_id
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="count" parameterType="UserAddressVo" resultType="int">
+    SELECT count(1)
+      FROM tb_user_address addr
+      JOIN tb_user usr ON usr.user_id = addr.user_id
+        <include refid="whereParamVo"/>
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="UserAddressMap" >
+    SELECT addr.*, usr.user_name
+      FROM tb_user_address addr
+      JOIN tb_user usr ON usr.user_id = addr.user_id
+     WHERE addr.address_id = #{addressId}
+    </select>
+
+    <insert id="insert" parameterType="UserAddressVo" useGeneratedKeys="true" keyProperty="cardId">
+        INSERT INTO tb_user_address(
+            address_id,
+            user_id,
+            address_kind,
+            address_title,
+            post_code,
+            address1,
+            address2,
+            is_basic
+            user_memo
+        ) 
+        VALUES(
+            #{addressId},  
+            #{userId},  
+            #{addressKind},  
+            #{addressTitle}, 
+            ${postCode},
+            #{address1}, 
+            #{address2},  
+            #{isBasic},
+            #{userMemo}
+        <selectKey resultType="int" order="AFTER" keyProperty="addressId">
+            SELECT LAST_INSERT_ID() as addressId
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="UserAddressVo">
+    UPDATE tb_user_address SET
+           edited_at = now()
+        <if test="addressKind != null and addressKind != ''">
+          ,address_kind = #{addressKind}
+        </if>
+        <if test="isBasic != null and isBasic != ''">
+          ,is_basic = #{isBasic}
+        </if>
+        <if test="addressTitle != null and addressTitle != ''">
+          ,address_title  = #{addressTitle}
+        </if>
+        <if test="postCode != null and postCode != ''">
+          ,post_code  = #{postCode}
+        </if>
+        <if test="address1 != null and address1 != ''">
+          ,address1  = #{address1}
+        </if>
+        <if test="address2 != null and address2 != ''">
+          ,address2  = #{address2}
+        </if>
+        <if test="userMemo != null and userMemo != ''">
+          ,user_memo  = #{userMemo}
+        </if>
+     WHERE address_id = #{addressId}
+    </update>
+
+    <sql id="whereParamMap">
+        <where>
+            <if test="useFlag != null and useFlag != ''">
+                AND addr.use_fg = #{useFlag}
+            </if>
+            <if test="userId != null and userId != ''">
+                AND addr.user_id = #{userId}
+            </if>
+            <if test="isBasic != null and isBasic != ''">
+                AND addr.is_basic = #{isBasic}
+            </if>
+            <if test="addressKind != null and addressKind != ''">
+                AND addr.address_kind = #{addressKind}
+            </if>
+            <if test="scAddressTitle != null and scAddressTitle != ''">
+                AND addr.adress_title like concat('%', #{scAddressTitle}, '%')
+            </if>
+            <if test="scUserName != null and scUserName != ''">
+                AND usr.user_name like concat('%', #{scUserName}, '%')
+            </if>
+            <if test="schtext != null and schtext != ''">
+                AND ( addr.address_title like concat('%', #{schtext}, '%')
+                   or usr.user_name like concat('%', #{schtext}, '%') )
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryList" parameterType="java.util.Map" resultMap="UserAddressMap" >
+    SELECT addr.*
+      FROM (
+           SELECT usr.user_id
+                  , addr.address_id
+                  , addr.address_kind
+                  , (SELECT code_title FROM tb_code WHERE p_code= 'ADDRESS_KIND' AND `code` = addr.address_kind) as address_kind_title
+                  , addr.address_title
+                  , post_code
+                  , is_basic
+                  , addr.address1
+                  , addr.address2
+                  , addr.user_memo
+                  , addr.use_fg
+                  , addr.edited_by
+                  , addr.edited_ip
+                  , addr.edited_at
+                  , usr.user_name
+             FROM tb_user_address addr
+             JOIN tb_user usr ON usr.user_id = addr.user_id
+        <include refid="whereParamMap"/>
+         ORDER BY addr.user_id, address_id
+           ) addr
+        <if test="listCount != null and listCount != ''">
+        LIMIT <if test="skipCount != null and skipCount != ''"> #{skipCount} , </if> #{listCount}
+        </if>
+    </select>
+
+    <select id="queryCount" parameterType="java.util.Map" resultType="int">
+    SELECT count(1)
+      FROM tb_user_address addr
+      JOIN tb_user usr ON usr.user_id = addr.user_id
+        <include refid="whereParamMap"/>
+    </select>
+
+    <update id="updateNotIsBasicByUserId" parameterType="int">
+    UPDATE tb_user_address SET
+           is_basic = "N"
+     WHERE user_id = #{userId}
+    </update>
+
+    <update id="deleteFlag" parameterType="int">
+    UPDATE tb_user_address SET
+           use_fg = 'N'
+     WHERE address_id = #{addressId}
+    </update>
+
+    <!-- /* Unused Function */ -->
+    <delete id="deletePK" parameterType="int">
+    DELETE
+      FROM tb_user_address
+     WHERE address_id = #{addressId}
+    </delete>
+
+</mapper>
